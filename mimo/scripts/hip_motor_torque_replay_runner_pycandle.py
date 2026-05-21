@@ -7,22 +7,59 @@ interface layer to communicate directly with pyCandle MD80 commands.
 
 from __future__ import annotations
 
+import argparse
 import importlib
 import importlib.util
 import os
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
 
 here = os.path.dirname(os.path.abspath(__file__))
-base_path = os.path.join(here, "hip_motor_torque_replay_runner.py")
-base_spec = importlib.util.spec_from_file_location("mimo_hip_motor_torque_replay_runner_base", base_path)
-if base_spec is None or base_spec.loader is None:
-    raise RuntimeError(f"No se pudo cargar el runner base desde {base_path}")
-base = importlib.util.module_from_spec(base_spec)
-sys.modules[base_spec.name] = base
-base_spec.loader.exec_module(base)
+_base_path = os.path.join(here, "hip_motor_torque_replay_runner.py")
+base = None
+
+
+def _load_base_module():
+    global base
+    if base is not None:
+        return base
+
+    base_spec = importlib.util.spec_from_file_location("mimo_hip_motor_torque_replay_runner_base", _base_path)
+    if base_spec is None or base_spec.loader is None:
+        raise RuntimeError(f"No se pudo cargar el runner base desde {_base_path}")
+    base = importlib.util.module_from_spec(base_spec)
+    sys.modules[base_spec.name] = base
+    base_spec.loader.exec_module(base)
+    return base
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Replay runner for hip torque exported by the simulation")
+    p.add_argument("--source-csv", default="", help="CSV generado por la simulación que contiene la referencia y el torque.")
+    p.add_argument("--source-hip", choices=["right", "left"], default="right")
+    p.add_argument("--interface", choices=["pycandle"], default="pycandle", help="Compatibilidad con la interfaz real pyCandle.")
+    p.add_argument("--motor-id", type=int, default=None, help="Motor ID; se pedirá si no se pasa en modo real.")
+    p.add_argument("--joint-state-topic", default="/md80/joint_states")
+    p.add_argument("--command-topic", default="/md80/motion_command")
+    p.add_argument("--rate-hz", type=float, default=100.0)
+    p.add_argument("--apply-torque", action=argparse.BooleanOptionalAction, default=False)
+    p.add_argument("--safe-torque-limit", type=float, default=None)
+    p.add_argument("--save-csv", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument("--save-plot", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument("--show-plot", action=argparse.BooleanOptionalAction, default=False)
+    p.add_argument("--run-dir", default="")
+    p.add_argument("--csv-path", default="")
+    p.add_argument("--plot-path", default="")
+    p.add_argument("--verbose", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument("--pycandle-baud", default="1M")
+    p.add_argument("--pycandle-fdcan", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument("--pycandle-max-torque", type=float, default=1.0)
+    p.add_argument("--pycandle-add-all-drives", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument("--pycandle-strict-id-match", action=argparse.BooleanOptionalAction, default=False)
+    return p
 
 
 class PyCandleTorqueReplayMotorInterface:
@@ -156,18 +193,18 @@ class PyCandleTorqueReplayMotorInterface:
             self.current_pos = float(self.drive.getPosition())
             self.current_vel = float(self.drive.getVelocity())
             self.current_effort = float(self.drive.getTorque())
-            self.last_state_ts = base.time.time()
+            self.last_state_ts = time.time()
         except Exception:
             pass
 
     def spin_once(self, timeout_s: float = 0.0) -> None:
         self._poll_state()
         if timeout_s > 0.0:
-            base.time.sleep(min(float(timeout_s), 0.002))
+            time.sleep(min(float(timeout_s), 0.002))
 
     def wait_for_state(self, timeout_s: float) -> bool:
-        t0 = base.time.time()
-        while base.time.time() - t0 <= timeout_s:
+        t0 = time.time()
+        while time.time() - t0 <= timeout_s:
             self.spin_once(timeout_s=0.01)
             if self.current_pos is not None:
                 return True
@@ -179,7 +216,7 @@ class PyCandleTorqueReplayMotorInterface:
     def close(self) -> None:
         try:
             self.publish_torque(0.0)
-            base.time.sleep(0.02)
+            time.sleep(0.02)
         except Exception:
             pass
         try:
@@ -191,14 +228,11 @@ class PyCandleTorqueReplayMotorInterface:
         except Exception:
             pass
 
-
 def main() -> int:
-    args = base._build_parser().parse_args()
+    args = _build_parser().parse_args()
 
     if not args.source_csv.strip():
         raise ValueError("--source-csv es obligatorio para este runner de replay.")
-
-    source = base._load_source_csv(args.source_csv.strip(), args.source_hip)
 
     if args.motor_id is None:
         try:
@@ -208,15 +242,8 @@ def main() -> int:
             print("Motor ID inválido. Usando 308.")
             args.motor_id = 308
 
-    run_tag = base.dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_id={args.motor_id}"
-    repo_root = Path(__file__).resolve().parents[2]
-    run_dir = args.run_dir.strip() if args.run_dir else str(repo_root / "outputs" / "mimo" / "runner" / run_tag)
-    os.makedirs(run_dir, exist_ok=True)
-
-    csv_path = args.csv_path.strip() if args.csv_path else os.path.join(run_dir, "telemetry.csv")
-    plot_path = args.plot_path.strip() if args.plot_path else os.path.join(run_dir, "timeseries.png")
-
     PyCandleTorqueReplayMotorInterface.configure_from_args(args)
+
     interface = PyCandleTorqueReplayMotorInterface(
         motor_id=args.motor_id,
         joint_state_topic=args.joint_state_topic,
@@ -228,18 +255,30 @@ def main() -> int:
         interface.close()
         raise RuntimeError("No se recibió estado del motor. Revisa el bus y los topics.")
 
+    base_mod = _load_base_module()
+    source = base_mod._load_source_csv(args.source_csv.strip(), args.source_hip)
+
+    run_tag = base_mod.dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_id={args.motor_id}"
+    repo_root = Path(__file__).resolve().parents[2]
+    run_dir = args.run_dir.strip() if args.run_dir else str(repo_root / "outputs" / "mimo" / "new_workflow" /"runner" / run_tag)
+    os.makedirs(run_dir, exist_ok=True)
+
+    csv_path = args.csv_path.strip() if args.csv_path else os.path.join(run_dir, "telemetry.csv")
+    plot_path = args.plot_path.strip() if args.plot_path else os.path.join(run_dir, "timeseries.png")
+
     initial_pos = float(interface.current_pos if interface.current_pos is not None else 0.0)
+
     print(f"Posición inicial: {initial_pos:+.6f} rad")
     print(f"Replay de torque desde {args.source_csv} usando la cadera {args.source_hip}")
 
     try:
-        config_path = base._write_run_config_txt(run_dir=run_dir, args=args, source=source)
+        config_path = base_mod._write_run_config_txt(run_dir=run_dir, args=args, source=source)
         print(f"Configuración guardada en {config_path}")
     except Exception as exc:
         print(f"No se pudo guardar run_config.txt: {exc}")
 
     dt_s = 1.0 / max(1e-3, float(args.rate_hz))
-    t0 = base.time.time()
+    t0 = time.time()
     next_tick = t0
 
     t_hist = []
@@ -250,21 +289,21 @@ def main() -> int:
 
     try:
         while True:
-            now = base.time.time()
+            now = time.time()
             t_rel = now - t0
             if t_rel > float(source.time_s[-1]):
                 break
 
             interface.spin_once(timeout_s=0.0)
-            q_des, torque = base._sample_source(source, t_rel)
+            q_des, torque = base_mod._sample_source(source, t_rel)
             if args.safe_torque_limit is not None:
                 torque = float(np.clip(torque, -float(args.safe_torque_limit), float(args.safe_torque_limit)))
 
-            q = float(interface.current_pos if interface.current_pos is not None else 0.0)
-            qd = float(interface.current_vel if interface.current_vel is not None else 0.0)
-
             command_torque = float(torque) if args.apply_torque else 0.0
             interface.publish_torque(command_torque)
+
+            q = float(interface.current_pos if interface.current_pos is not None else 0.0)
+            qd = float(interface.current_vel if interface.current_vel is not None else 0.0)
 
             t_hist.append(t_rel)
             q_hist.append(q)
@@ -279,13 +318,15 @@ def main() -> int:
                         q,
                         q_des,
                         command_torque,
-                    )
+                    ),
+                    flush=True,
                 )
 
+            # control del bucle temporal
             next_tick += dt_s
-            sleep_s = next_tick - base.time.time()
+            sleep_s = next_tick - time.time()
             if sleep_s > 0.0:
-                base.time.sleep(sleep_s)
+                time.sleep(sleep_s)
 
     except KeyboardInterrupt:
         print("Replay interrumpido por el usuario")
@@ -303,11 +344,11 @@ def main() -> int:
     torque_arr = np.asarray(torque_hist, dtype=np.float64)
 
     if args.save_csv:
-        base._save_csv(csv_path, t_arr, q_arr, qd_arr, q_des_arr, torque_arr)
+        base_mod._save_csv(csv_path, t_arr, q_arr, qd_arr, q_des_arr, torque_arr)
         print(f"CSV guardado en {csv_path}")
 
     if args.save_plot:
-        base._plot_run(plot_path, bool(args.show_plot), t_arr, q_arr, q_des_arr, torque_arr)
+        base_mod._plot_run(plot_path, bool(args.show_plot), t_arr, q_arr, q_des_arr, torque_arr)
         print(f"Imagen guardada en {plot_path}")
 
     meta_path = os.path.join(run_dir, "simulation_info.txt")

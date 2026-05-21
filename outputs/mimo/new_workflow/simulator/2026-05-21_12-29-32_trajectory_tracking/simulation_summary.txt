@@ -4,15 +4,15 @@ MIMo TRAJECTORY TRACKING SIMULATION - SUMMARY
 
 EXECUTION INFO
 --------------------------------------------------------------------------------
-timestamp: 2026-05-21T10:02:08
-command: visualiza_standup_trajectory_tracking.py
-run_dir: results/new_workflow/simulator/2026-05-21_10-02-01_trajectory_tracking
+timestamp: 2026-05-21T12:29:43
+command: mimo/scripts/visualiza_standup_trajectory_tracking.py
+run_dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-05-21_12-29-32_trajectory_tracking
 
 ENVIRONMENT SETUP
 --------------------------------------------------------------------------------
 env_id: MIMoVelocityLowerBody-v0
 reference_csv: /home/carlos/Escritorio/TFG/code_tfg/mimo/scripts/healthy_hip_reference.csv
-reference_period_s: 1.063
+reference_period_s: 2.1
 reference_points: 100
 
 TRAJECTORY CONFIGURATION
@@ -21,7 +21,7 @@ trajectory_phase_offset_pct: 0.0
 left_phase_offset_pct: 50.0
 target_cycles: 5.0
 initial_phase_right: 37.1%
-left_start_delay_s: 0.796s
+left_start_delay_s: 1.572s
 
 CONTROL PARAMETERS
 --------------------------------------------------------------------------------
@@ -40,11 +40,11 @@ joint_armature_scale: 1.0
 
 SIMULATION RESULTS
 --------------------------------------------------------------------------------
-n_steps: 532
+n_steps: 1050
 sim_dt: 0.010000000s
-duration_s: 5.320000s
-csv_path: results/new_workflow/simulator/2026-05-21_10-02-01_trajectory_tracking/hip_tracking_telemetry.csv
-plot_path: results/new_workflow/simulator/2026-05-21_10-02-01_trajectory_tracking/hip_tracking_summary.png
+duration_s: 10.500000s
+csv_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-05-21_12-29-32_trajectory_tracking/hip_tracking_telemetry.csv
+plot_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-05-21_12-29-32_trajectory_tracking/hip_tracking_summary.png
 
 MUSCLE MODEL PARAMETERS
 --------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ lmax: 1.6          (default)
 lmin: 0.5          (default)
 mass_scale: 1.0          (default)
 muscle_tau: 0.02          (default)
-pid_activation_scale: 10.0          (default)
+pid_activation_scale: 1.0          (default)
 plot_fps: 60.0          (default)
 plot_path:           (default)
 reference_angle_column: hip_angle_mean          (default)
@@ -103,6 +103,6 @@ run_dir:           (default)
 safe_torque_limit: 10.0          (default)
 seed: 7          (default)
 show_plot: False          (default)
-trajectory_period_s: 1.063          (default)
+trajectory_period_s: 2.1          (default: 1.063)
 trajectory_phase_offset_pct: 0.0          (default)
 trajectory_scale: 1.0          (default)

@@ -519,7 +519,7 @@ def _get_default_args(default_reference: str) -> dict:
         'kp': 1.8,
         'ki': 0.15,
         'kd': 0.08,
-        'pid_activation_scale': 10.0,
+        'pid_activation_scale': 1.0,
         'safe_torque_limit': 10.0,
         'mass_scale': 1.0,
         'joint_stiffness_scale': 1.0,
@@ -564,7 +564,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--kp", type=float, default=0.9) # 1.8
     p.add_argument("--ki", type=float, default=0.0) # 0.15
     p.add_argument("--kd", type=float, default=0.0) # 0.08
-    p.add_argument("--pid-activation-scale", type=float, default=10.0)
+    p.add_argument("--pid-activation-scale", type=float, default=1.0)
     p.add_argument("--safe-torque-limit", type=float, default=10.0)
     p.add_argument("--mass-scale", type=float, default=1.0)  # Body mass scaling factor
     p.add_argument("--joint-stiffness-scale", type=float, default=1.0)  # Joint stiffness scaling factor

@@ -1,0 +1,12 @@
+run_dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/runner/2026-05-21_12-49-19_id=11
+source_csv: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-05-21_12-29-32_trajectory_tracking/hip_tracking_telemetry.csv
+source_hip: right
+interface: pycandle
+motor_id: 11
+rate_hz: 100.0
+apply_torque: True
+safe_torque_limit: None
+n_samples: 1049
+duration_s: 10.480051
+csv_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/runner/2026-05-21_12-49-19_id=11/telemetry.csv
+plot_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/runner/2026-05-21_12-49-19_id=11/timeseries.png
