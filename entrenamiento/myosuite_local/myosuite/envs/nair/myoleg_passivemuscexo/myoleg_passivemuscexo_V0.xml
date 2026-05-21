@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+
+<!-- =================================================
+	This model is generated with tacking the Myosuite conversion of [Rajagopal's full body gait model](https://github.com/opensim-org/opensim-models/tree/master/Models/RajagopalModel) as close
+reference.
+	Model	  :: Myo Leg 1 Dof Exo (MuJoCoV2.0)
+	Author	:: Andres Chavarrias (andreschavarriassanchez@gmail.com), David Rodriguez, Pablo Lanillos 
+	source	:: https://github.com/AndresChS/NRG_Code
+	====================================================== -->
+
+<mujoco model="myoleg_1dof40muscexo_V0">
+
+  <include file="scene/myosuite_scene_noPedestal.xml"/>
+  <include file="torso/assets/myotorsorigidnoinertia_assets.xml"/>
+  <include file="leg/assets/myolegR_assets.xml"/>
+  <compiler angle="radian" meshdir=".." texturedir=".."/>
+
+  <asset>
+      <hfield name="terrain" size="7 7 1 0.001" nrow="100" ncol="100"/>
+  </asset>
+
+   <!-- World body declaration: First rigid meshes. Second dynamics meshes -->
+  <worldbody>
+    <geom name="terrain" type="hfield" hfield="terrain" pos="0 0 -0.005" material="matfloor" conaffinity="1" contype="1" rgba="1 1 1 0"/>
+    <site name="pelvis_target" size="0.02" pos="0 0 .92" group="4"/>
+    <camera name="track" pos="0 0 0" euler="0 -1 0.5" mode="fixed"/>
+    <body name="root" pos="0 0 1" euler="0 0 -1.57">
+        <include file="torso/assets/myotorsorigidnoinertia_chain.xml"/>
+        <include file="leg/assets/myolegR_chain.xml"/>
+    </body>
+  </worldbody>
+
+</mujoco>
+
+
+
+

@@ -1,0 +1,1 @@
+/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_interfaces/ament_cmake_environment_hooks/local_setup.zsh

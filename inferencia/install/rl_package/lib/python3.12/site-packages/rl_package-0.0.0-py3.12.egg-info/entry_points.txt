@@ -1,0 +1,15 @@
+[console_scripts]
+aggregator = rl_package.aggregator:main
+exo_publisher = rl_package.exo_publisher:main
+listener = rl_package.listener:main
+myosuite_publisher = rl_package.myosuite_publisher:main
+rl_node = rl_package.rl_node:main
+rl_node_v2 = rl_package.rl_node_v2:main
+rl_node_v3 = rl_package.rl_node_v3:main
+rl_node_v4 = rl_package.rl_node_v4:main
+rl_node_v5 = rl_package.rl_node_v5:main
+rl_node_v6 = rl_package.rl_node_v6:main
+rl_node_v7 = rl_package.rl_node_v7:main
+rl_training_node = rl_package.torchRL_gym_nair_PPO:main
+talker = rl_package.talker:main
+training_ros2socket = rl_package.training_ros2socket:main

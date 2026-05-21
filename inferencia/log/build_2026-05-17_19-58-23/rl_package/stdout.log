@@ -1,0 +1,35 @@
+running develop
+running egg_info
+writing ../../build/rl_package/rl_package.egg-info/PKG-INFO
+writing dependency_links to ../../build/rl_package/rl_package.egg-info/dependency_links.txt
+writing entry points to ../../build/rl_package/rl_package.egg-info/entry_points.txt
+writing requirements to ../../build/rl_package/rl_package.egg-info/requires.txt
+writing top-level names to ../../build/rl_package/rl_package.egg-info/top_level.txt
+reading manifest file '../../build/rl_package/rl_package.egg-info/SOURCES.txt'
+writing manifest file '../../build/rl_package/rl_package.egg-info/SOURCES.txt'
+running build
+running build_py
+running install
+running install_lib
+running install_data
+copying resource/rl_package -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/share/ament_index/resource_index/packages
+copying package.xml -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/share/rl_package
+running install_egg_info
+removing '/home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/python3.12/site-packages/rl_package-0.0.0-py3.12.egg-info' (and everything under it)
+Copying ../../build/rl_package/rl_package.egg-info to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/python3.12/site-packages/rl_package-0.0.0-py3.12.egg-info
+running install_scripts
+Installing aggregator script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing exo_publisher script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing listener script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing myosuite_publisher script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing rl_node script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing rl_node_v2 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing rl_node_v3 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing rl_node_v4 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing rl_node_v5 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing rl_node_v6 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing rl_node_v7 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing rl_training_node script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing talker script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+Installing training_ros2socket script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+writing list of installed files to '/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/install.log'

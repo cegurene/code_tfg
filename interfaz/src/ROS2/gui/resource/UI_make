@@ -1,0 +1,7 @@
+pyuic5 -x archivo.ui -o archivo_ui.py
+pyuic6 -x GUI.ui -o gui_ui.py
+pyuic6 -x GUI_2.ui -o gui_ui2.py
+
+pyuic6 -x gui_assistive_exo.ui -o gui_assistive_exo_data.py
+
+

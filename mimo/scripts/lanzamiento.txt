@@ -1,0 +1,53 @@
+Terminal 1
+
+cd ~/Escritorio/ros2_candle_ws/
+source install/setup.bash
+ros2 run candle_ros2 candle_ros2_node USB 1M
+
+---------------------------------------------------------
+
+Terminal 2
+
+cd ~/Escritorio/ros2_candle_ws/
+source install/setup.bash
+ros2 service call /candle_ros2_node/add_md80s candle_ros2/srv/AddMd80s "{drive_ids: [11]}"
+ros2 service call /candle_ros2_node/set_mode_md80s candle_ros2/srv/SetModeMd80s "{drive_ids: [11], mode:["RAW_TORQUE"]}"
+ros2 service call /candle_ros2_node/enable_md80s candle_ros2/srv/GenericMd80Msg "{drive_ids:[11]}"
+
+---------------------------------------------------------
+
+Terminal 3
+
+conda activate mimo312
+source ~/Escritorio/ros2_candle_ws/install/setup.bash
+source /opt/ros/jazzy/setup.bash
+python mimoEnv/knee_motor_sim2real_runner.py \
+  --mode real \
+  --control-mode muscle \
+  --motor-id 11 \
+  --duration-s 20 \
+  --rate-hz 100 \
+  --plot-angle-align real_to_des \
+  --plot-angle-align-anchor initial \
+  --torque-output-source raw_scaled \
+  --torque-raw-scale 0.3333333333 \
+  --apply-torque --save-csv --save-plot 
+
+python mimoEnv/knee_motor_sim2real_runner.py \
+  --mode real \
+  --control-mode muscle \
+  --motor-id 11 \
+  --duration-s 20 \
+  --rate-hz 100 \
+  --plot-angle-align real_to_des \
+  --plot-angle-align-anchor initial \
+  --torque-output-source raw_scaled \
+  --torque-raw-scale 0.3333333333 \
+  --apply-torque \
+  --save-csv \
+  --save-plot \
+  --torque-raw-scale-pos 0.3333333333 \
+  --torque-raw-scale-neg 0.40
+
+conda activate mimo312
+python mimoEnv/exo_motor_custom/hip_motor_sim2real_runner_pycandle_impedance.py --mode real --control-mode muscle --motor-id 11 --duration-s 40 --rate-hz 100 --plot-angle-align real_to_des --plot-angle-align-anchor initial --torque-output-source raw_scaled --pycandle-baud 1M --pycandle-fdcan --pycandle-max-torque 1.0 --apply-torque --save-csv --save-plot --torque-raw-scale-pos 1 --torque-raw-scale-neg 1

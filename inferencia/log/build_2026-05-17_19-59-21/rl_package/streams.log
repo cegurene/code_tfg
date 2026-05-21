@@ -1,0 +1,48 @@
+[0.417s] Invoking command in '/home/carlos/Escritorio/TFG/code_tfg/inferencia/src/rl_package': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rl_package build --build-base /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build install --record /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/install.log --single-version-externally-managed install_data
+[0.513s] /home/carlos/.local/lib/python3.12/site-packages/setuptools/_distutils/dist.py:289: UserWarning: Unknown distribution option: 'tests_require'
+[0.513s]   warnings.warn(msg)
+[0.571s] running egg_info
+[0.579s] writing ../../build/rl_package/rl_package.egg-info/PKG-INFO
+[0.580s] writing dependency_links to ../../build/rl_package/rl_package.egg-info/dependency_links.txt
+[0.580s] writing entry points to ../../build/rl_package/rl_package.egg-info/entry_points.txt
+[0.580s] writing requirements to ../../build/rl_package/rl_package.egg-info/requires.txt
+[0.580s] writing top-level names to ../../build/rl_package/rl_package.egg-info/top_level.txt
+[0.598s] reading manifest file '../../build/rl_package/rl_package.egg-info/SOURCES.txt'
+[0.599s] writing manifest file '../../build/rl_package/rl_package.egg-info/SOURCES.txt'
+[0.599s] running build
+[0.599s] running build_py
+[0.599s] copying rl_package/rl_node_v5.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.600s] copying rl_package/test_model_loading.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.600s] copying rl_package/exo_publisher.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.600s] copying rl_package/rl_node_v7.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.600s] copying rl_package/myosuite_publisher.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.600s] copying rl_package/aggregator.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.600s] copying rl_package/rl_node.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.600s] copying rl_package/rl_node_v6.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.600s] copying rl_package/torchRL_gym_nair_PPO.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.600s] copying rl_package/rl_node_v4.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.600s] copying rl_package/rl_node_v3.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.601s] copying rl_package/rl_node_v2.py -> /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build/lib/rl_package
+[0.601s] running install
+[0.604s] running install_lib
+[0.613s] running install_data
+[0.613s] running install_egg_info
+[0.622s] removing '/home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/python3.12/site-packages/rl_package-0.0.0-py3.12.egg-info' (and everything under it)
+[0.622s] Copying ../../build/rl_package/rl_package.egg-info to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/python3.12/site-packages/rl_package-0.0.0-py3.12.egg-info
+[0.622s] running install_scripts
+[0.640s] Installing aggregator script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.640s] Installing exo_publisher script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.640s] Installing listener script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.640s] Installing myosuite_publisher script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.640s] Installing rl_node script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.640s] Installing rl_node_v2 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.641s] Installing rl_node_v3 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.641s] Installing rl_node_v4 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.641s] Installing rl_node_v5 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.641s] Installing rl_node_v6 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.641s] Installing rl_node_v7 script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.641s] Installing rl_training_node script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.641s] Installing talker script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.641s] Installing training_ros2socket script to /home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/rl_package
+[0.641s] writing list of installed files to '/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/install.log'
+[0.657s] Invoked command in '/home/carlos/Escritorio/TFG/code_tfg/inferencia/src/rl_package' returned '0': DEBUGINFOD_URLS=https://debuginfod.ubuntu.com PYTHONPATH=/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/home/carlos/Escritorio/TFG/code_tfg/inferencia/install/rl_package/lib/python3.12/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py egg_info --egg-base ../../build/rl_package build --build-base /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/build install --record /home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_package/install.log --single-version-externally-managed install_data

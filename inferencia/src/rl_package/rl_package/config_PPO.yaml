@@ -1,0 +1,50 @@
+# En config_PPO.yaml
+hydra:
+  run:
+    dir: outputs/${env.algorithm}/${env.env_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    
+
+# task and env
+env:
+  algorithm: PPO
+  num_cpu: 1
+  use_delayed_sensors: True
+  env_name: nair_walk_h0918KneeExoRS2-v0 #nair_walk_h0918_KneeExo_GH_v0   
+                                        #"nair_walk_h0918_exo_knee-v1"
+                                        #"ExoLegSpasticityFlexoExtEnv-v0"
+  torch_dir: null
+# collector
+collector:
+  frames_per_batch: 1000
+  total_frames: 10_000_000
+  learning_epochs: 5
+  buffer_size: 1000
+
+# logger
+logger:
+  #backend: wandb
+  exp_name: nair_walk_h0918_exo_knee_Espasticity_PPO
+  write_interval: 100_000
+  test_interval: 100_000
+  check_interval: 100_000
+  num_test_episodes: 5
+
+# Optim
+optim:
+  lr: 1e-3
+  optimizer: KLAdaptiveRL
+  optimizer_kwargs: {"kl_threshold": 0.008}
+  weight_decay: 0.0
+  anneal_lr: True
+
+# loss
+hiperparameters:
+  clip_epsilon: 0.2
+  entropy_coef: 0.9
+  critic_coef: 1.0
+  lmbda: 0.95
+  gamma: 0.99 
+  batch_size: 1024
+  mini_batch_size : 64
+  max_grad_norm: 1.0
+

@@ -1,0 +1,104 @@
+Entorno ros con el paquete "candle" en:
+
+cd ~/Escritorio/ros2_candle_ws/
+source install/setup.bash
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+Comprobar que está "candle":
+
+ros2 pkg list | grep "candle"
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+Lanzar nodo:
+
+ros2 run candle_ros2 candle_ros2_node USB 1M
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+ros2 node info /candle_ros2_node
+
+/candle_ros2_node
+  Subscribers:
+    /md80/impedance_command:      candle_ros2/msg/ImpedanceCommand
+    /md80/motion_command:		      candle_ros2/msg/MotionCommand
+    /md80/position_pid_command: 	candle_ros2/msg/PositionPidCommand
+    /md80/velocity_pid_command: 	candle_ros2/msg/VelocityPidCommand
+    /parameter_events: 			      rcl_interfaces/msg/ParameterEvent
+    
+  Publishers:
+    /md80/joint_states: 	sensor_msgs/msg/JointState
+    /parameter_events:		rcl_interfaces/msg/ParameterEvent
+    /rosout:			        rcl_interfaces/msg/Log
+    
+  Service Servers:
+    /candle_ros2_node/add_md80s: 			            candle_ros2/srv/AddMd80s
+    /candle_ros2_node/describe_parameters: 		    rcl_interfaces/srv/DescribeParameters
+    /candle_ros2_node/disable_md80s: 			        candle_ros2/srv/GenericMd80Msg
+    /candle_ros2_node/enable_md80s: 			        candle_ros2/srv/GenericMd80Msg
+    /candle_ros2_node/get_parameter_types: 		    rcl_interfaces/srv/GetParameterTypes
+    /candle_ros2_node/get_parameters: 			      rcl_interfaces/srv/GetParameters
+    /candle_ros2_node/get_type_description: 		  type_description_interfaces/srv/GetTypeDescription
+    /candle_ros2_node/list_parameters: 			      rcl_interfaces/srv/ListParameters
+    /candle_ros2_node/set_mode_md80s: 			      candle_ros2/srv/SetModeMd80s
+    /candle_ros2_node/set_parameters: 			      rcl_interfaces/srv/SetParameters
+    /candle_ros2_node/set_parameters_atomically: 	rcl_interfaces/srv/SetParametersAtomically
+    /candle_ros2_node/zero_md80s: 			          candle_ros2/srv/GenericMd80Msg
+    
+  Service Clients:
+
+  Action Servers:
+
+  Action Clients:
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+Añadir id:
+
+ros2 service call /candle_ros2_node/add_md80s candle_ros2/srv/AddMd80s "{drive_ids: [308]}"
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+Seleccionar modo de control: (IMPEDANCE, POSITION_PID, VELOCITY_PID, RAW_TORQUE)
+
+ros2 service call /candle_ros2_node/set_mode_md80s candle_ros2/srv/SetModeMd80s "{drive_ids: [308], mode:["RAW_TORQUE"]}"
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+Activar drivers:
+
+ros2 service call /candle_ros2_node/enable_md80s candle_ros2/srv/GenericMd80Msg "{drive_ids:[308]}"
+
+
+Desactivar drivers:
+
+ros2 service call /candle_ros2_node/disable_md80s candle_ros2/srv/GenericMd80Msg "{drive_ids:[308]}"
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+Poner posición actual como cero (origen):
+
+ros2 service call /candle_ros2_node/zero_md80s candle_ros2/srv/GenericMd80Msg "{drive_ids:[308]}"
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+Mover motor:
+
+IMPEDANCE:
+ros2 topic pub /md80/impedance_command candle_ros2/msg/ImpedanceCommand "{drive_ids: [308], kp: [1.0,1.0], kd: [0.001,0.001], max_output: [1.0, 1.0]}"
+
+POSITION_PID:
+ros2 topic pub /md80/position_pid_command candle_ros2/msg/PositionPidCommand "{drive_ids: [308], position_pid: [{kp: 40.0, ki: 0.5, kd: 0.0, i_windup: 10, max_output: 3.0},{kp: 20.0, ki: 0.5, kd: 0.0, i_windup: 10, max_output: 3.0}], velocity_pid: [{kp: 0.2, ki: 0.3, kd: 0.0, i_windup: 2.0, max_output: 2.0}, {kp: 0.1, ki: 0.1, kd: 0.0, i_windup: 1, max_output: 2.0}]}" 
+
+VELOCITY_PID:
+ros2 topic pub /md80/velocity_pid_command candle_ros2/msg/VelocityPidCommand "{drive_ids: [308], velocity_pid: [{kp: 0.2, ki: 0.3, kd: 0.0, i_windup: 2.0, max_output: 2.0}, {kp: 0.1, ki: 0.1, kd: 0.0, i_windup: 1, max_output: 2.0}]}"
+
+RAW_TORQUE (Si ponemos 0.2 no se va a mover):
+ros2 topic pub /md80/motion_command candle_ros2/MotionCommand "{drive_ids: [308], target_position: [0.0], target_velocity: [0.0], target_torque: [0.2]}"
+
+------------------------------------------------------------------------------------------------------------------------------------
+
+Ver posición, velocidad y esfuerzo del motor:
+
+ros2 topic echo /md80/joint_states

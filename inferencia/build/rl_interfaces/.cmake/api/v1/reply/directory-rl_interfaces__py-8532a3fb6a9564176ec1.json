@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "rl_interfaces__py",
+		"source" : "/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_interfaces/rl_interfaces__py"
+	}
+}

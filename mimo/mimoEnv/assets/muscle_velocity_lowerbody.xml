@@ -1,0 +1,45 @@
+<mujoco model="MIMo_lowerbody">
+
+    <compiler inertiafromgeom="true" angle="degree"/>
+
+    <option timestep="0.005" gravity="0 0 0" iterations="50" tolerance="1e-10" solver="Newton" jacobian="dense" cone="elliptic" impratio="1.0"/>
+
+    <size nconmax="1000" njmax="5000" nstack="10000000"/>
+
+    <visual>
+        <map force="0.1" zfar="30" znear="0.005"/>
+        <rgba haze="0.15 0.25 0.35 1"/>
+        <quality shadowsize="4096"/>
+        <global offwidth="800" offheight="800"/>
+    </visual>
+
+    <default>
+        <geom material="matgeom" condim="3" solimp="0.95 0.99 0.001 0.5 1" solref="0.005 1"/>
+    </default>
+
+    <asset>
+        <texture type="skybox" builtin="flat" rgb1="0.8 0.9 1" width="512" height="512"/>
+        <texture name="texplane" type="2d" builtin="checker" rgb1=".7 .78 .66" rgb2=".58 0.66 0.54" width="512" height="512" mark="cross" markrgb=".92 .92 .92"/>
+        <texture name="texgeom" type="cube" builtin="flat" mark="cross" width="127" height="1278"
+            rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" markrgb="1 1 1" random="0.01"/>
+        <material name="matplane" reflectance="0.3" texture="texplane" texrepeat="1 1" texuniform="true"/>
+        <material name="matgeom" texture="texgeom" texuniform="true" rgba="0.8 0.6 .4 1"/>
+        <material name="matmocap" texture="texgeom" texuniform="true" rgba="0.5 0 0.5 0.5"/>
+    </asset>
+
+    <include file="mimo/MIMo_meta.xml"></include>
+
+    <worldbody>
+        <geom name="floor" pos="0 0 0" size="0 0 .25" type="plane" material="matplane" condim="3"/>
+        <light directional="true" diffuse="1.20 1.15 1.05" specular="0.2 0.2 0.2" pos="0 0 10" dir="-0.2 -0.3 -1" castshadow="true"/>
+        <body name="mimo_location" pos="0 0 .4" euler="0 0 0">
+            <freejoint name="mimo_orientation"/>
+            <include file="mimo/MIMo_model_lower.xml"></include>
+        </body>
+    </worldbody>
+
+    <equality>
+        <weld body1="hip"/>
+    </equality>
+
+</mujoco>

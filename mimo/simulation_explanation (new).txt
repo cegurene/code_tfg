@@ -1,0 +1,48 @@
+Workflow actual en texto plano, dividido por partes:
+
+1. Inicio
+- Se ejecuta el script.
+- Se parsean los argumentos de línea de comandos (entorno, CSV, PID, escalas, paths, etc.).
+
+2. Carga de referencia
+- Se lee el CSV de referencia.
+- Se resuelven columnas de fase y ángulo.
+- Se normalizan fase y ángulo (incluyendo unidad, signo y escala).
+- Se fija el período de trayectoria con el argumento trajectory_period_s.
+
+3. Creación y configuración del entorno
+- Se crea el entorno Gym con gym.make.
+- Se hace reset con seed.
+- Se aplican escalas de modelo: masa, stiffness, damping, frictionloss y armature.
+- Se verifica que el modelo de actuación sea MuscleModel.
+- Se localizan índices de actuadores y joints de cadera.
+
+4. Inicialización del control muscular
+- Se parsean músculos flexores y extensores.
+- Se aplica fmax_scale a las unidades musculares.
+- Se crean parámetros musculares (tau, lce_min, lce_max, lmin, lmax, fvmax, fpmax).
+- Se inicializan controladores de cadera derecha e izquierda.
+- Se calcula dt y número total de pasos según cycles y período.
+- Se calcula fase inicial de la derecha y retardo inicial de la izquierda para alinear posiciones.
+
+5. Bucle principal de simulación (por cada paso)
+- Se calcula tiempo y fase actual de cada cadera.
+- Se interpola el objetivo de referencia para derecha e izquierda.
+- Se leen qpos y qvel reales.
+- Se calcula error de posición.
+- Se integra el error (término I).
+- Se calcula salida PID (P + I + D).
+- Se normaliza la salida PID a [-1, 1] usando safe_torque_limit.
+- Se separa en activación flex/ext (si señal positiva activa flex; si negativa activa ext).
+- Se construye el vector de acción.
+- Se ejecuta env.step(action).
+- Se renderiza si render está activo.
+- Se guarda una fila de telemetría.
+- Si el entorno termina o se trunca, se hace reset y continúa.
+
+6. Cierre y guardado de resultados
+- Se cierra el entorno con env.close.
+- Se guarda el CSV de telemetría: hip_tracking_telemetry.csv.
+- Se genera y guarda la figura: hip_tracking_summary.png.
+- Se escribe el resumen completo de ejecución: simulation_summary.txt.
+- Se imprimen en consola las rutas de los archivos generados.

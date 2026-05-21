@@ -1,0 +1,37 @@
+package.xml
+setup.cfg
+setup.py
+../../build/rl_package/rl_package.egg-info/PKG-INFO
+../../build/rl_package/rl_package.egg-info/SOURCES.txt
+../../build/rl_package/rl_package.egg-info/dependency_links.txt
+../../build/rl_package/rl_package.egg-info/entry_points.txt
+../../build/rl_package/rl_package.egg-info/requires.txt
+../../build/rl_package/rl_package.egg-info/top_level.txt
+../../build/rl_package/rl_package.egg-info/zip-safe
+resource/rl_package
+rl_package/__init__.py
+rl_package/aggregator v1.py
+rl_package/aggregator.py
+rl_package/exo_publisher v1.py
+rl_package/exo_publisher.py
+rl_package/listener.py
+rl_package/myosuite_publisher v1.py
+rl_package/myosuite_publisher.py
+rl_package/nair_agents.py
+rl_package/prueba1.py
+rl_package/rl_node.py
+rl_package/rl_node_v2.py
+rl_package/rl_node_v3.py
+rl_package/rl_node_v4.py
+rl_package/rl_node_v5.py
+rl_package/rl_node_v6.py
+rl_package/rl_node_v7.py
+rl_package/talker.py
+rl_package/test_model_loading.py
+rl_package/torchRL_gym_nair_PPO v1.py
+rl_package/torchRL_gym_nair_PPO v2.py
+rl_package/torchRL_gym_nair_PPO.py
+rl_package/training_ros2socket.py
+test/test_copyright.py
+test/test_flake8.py
+test/test_pep257.py

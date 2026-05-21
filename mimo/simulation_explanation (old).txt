@@ -1,0 +1,162 @@
+Voy a generar el esquema solicitadas; primero he listado y leído los archivos clave del flujo. Ahora preparo el esquema detallado (siguiente paso).
+
+Entrego a continuación el esquema completo y detallado de archivos implicados en lanzar visualiza_standup.py.
+
+- visualiza_standup.py
+  - Quién lo llama: usuario (ejecución directa `python examples/visualiza_standup.py`).
+  - A quién llama / importa:
+    - mimoEnv (import para registrar/usar entornos Gymnasium).
+    - `mimoActuation.muscle.MuscleModel` (para detectar el tipo de actuation_model).
+    - Librerías estándar: `gymnasium`, `numpy`, `csv`, `os`, `matplotlib.pyplot`, `time`, `datetime`.
+  - Qué hace:
+    - Carga activaciones desde un `telemetry.csv` (ruta `CSV_PATH`).
+    - Prepara activaciones para ambas caderas (desfase).
+    - Crea/instancia el entorno Gym (`gym.make(ENV_ID, render_mode='human')`), fuerza gravedad, resetea.
+    - Construye mapeo de actuadores `mimo_actuator_ids`, busca índices de `act:right_hip_flex` y `act:left_hip_flex`.
+    - En bucle infinito: lee activaciones, calcula combinaciones flex/ext y torques, mapea a `env.step()`, renderiza, registra logs de qpos (ángulos de cadera) y activaciones en memoria.
+    - Al finalizar (finally): crea carpeta `results/simulation/<fecha>_simulacion/`, guarda `hip_angles_log.csv` y guarda `hip_and_activations.png` con dos gráficas (trayectorias de ambas caderas y 6 activaciones de muscles).
+  - Notas clave:
+    - Usa convenciones de nombres de actuadores `act:...`.
+    - Depende del entorno registrado `MIMoVelocityLowerBody-v0`.
+
+- __init__.py
+  - Quién lo llama: import mimoEnv desde visualiza_standup.py.
+  - A quién llama:
+    - Importa `mimoEnv.envs.dummy.DEMO_XML` para algunas registraciones.
+    - Llama `gymnasium.envs.registration.register()` varias veces para registrar IDs (incluye `MIMoVelocityLowerBody-v0`) con `entry_point` en `mimoEnv.envs`.
+  - Qué hace:
+    - Registra todos los entornos Gym custom de MIMo para que `gym.make()` los encuentre por ID.
+
+- __init__.py
+  - Quién lo llama: mimoEnv (registro) y cualquier usuario que haga `from mimoEnv.envs import ...`.
+  - A quién llama:
+    - Importa las clases de envs: `dummy`, `reach`, `standup`, `selfbody`, `catch`, `muscle_test`, `roll_over`, y exporta `MIMoVelocityLowerBodyEnv` entre otras.
+  - Qué hace:
+    - Conveniencia/alias para exponer las clases de entorno desde `mimoEnv.envs`.
+
+- muscle_test.py
+  - Quién lo llama: __init__.py y el registro en __init__.py (entry_point para `MIMoVelocityLowerBody-v0` apunta aquí).
+  - A quién llama:
+    - `mimoEnv.envs.mimo_env.MIMoEnv` (herencia).
+    - `mimoEnv.envs.dummy.MIMoDummyEnv` (varias clases heredan).
+    - `mimoActuation.muscle.MuscleModel` (se pasa como `actuation_model` por defecto en varios envs).
+    - Lee rutas XML desde `SCENE_DIRECTORY` (constante en mimo_env.py) y define `LOWERBODY_TEST_XML` que apunta a `assets/muscle_velocity_lowerbody.xml`.
+  - Qué hace:
+    - Define clases específicas: `MIMoVelocityLowerBodyEnv` (usa muscle_velocity_lowerbody.xml), `MIMoStaticMuscleTestEnv`, etc. Estas clases configuran el `actuation_model` (MuscleModel), cámaras por defecto y heredan toda la lógica de `MIMoDummyEnv` / `MIMoEnv`.
+  - Notas:
+    - Para visualiza_standup.py se usa `MIMoVelocityLowerBodyEnv` (entry point `mimoEnv.envs:MIMoVelocityLowerBodyEnv`).
+
+- dummy.py
+  - Quién lo llama: __init__.py, muscle_test.py y otros.
+  - A quién llama:
+    - Usa `MIMoEnv` (desde `mimo_env`) para crear envs “dummy”.
+    - Define `DEMO_XML` (ruta a escena por defecto) en el módulo.
+  - Qué hace:
+    - Implementa `MIMoDummyEnv` y variantes `MIMoV2DummyEnv`, `MIMoMuscleDummyEnv`, etc., proporcionando valores por defecto (camera config, sensor config) y comportamiento mínimo necesario para correr escenas de prueba.
+  - Notas:
+    - Muchas clases del paquete heredan de aquí para escenarios concretos.
+
+- mimo_env.py
+  - Quién lo llama: `dummy.py`, muscle_test.py, `reach.py`, etc. (clases de entornos).
+  - A quién llama / importa:
+    - `mujoco`, `gymnasium.envs.mujoco.MujocoEnv`, `mimoActuation.actuation.ActuationModel`, `mimoTouch.touch`, `mimoVision.vision`, `mimoVestibular.vestibular`, `mimoProprioception.proprio`, `mimoGrowth.growth`.
+    - Define `SCENE_DIRECTORY = mimoEnv/assets` (ruta absoluta).
+  - Qué hace:
+    - Clase base `MIMoEnv` que extiende `MujocoEnv`: inicializa modelo MuJoCo, carga XML (`model_path`), maneja actuation_model, sensores, cámaras, map de actuadores/joints (`_get_actuators`, `_get_joints`), `do_simulation`, `step`, etc.
+    - Proporciona hooks (`proprio_setup`, `touch_setup`, `vision_setup`, `vestibular_setup`) que usan módulos mimoProprioception, mimoTouch, mimoVision, mimoVestibular cuando están activados.
+  - Notas:
+    - Importante: `SCENE_DIRECTORY` es la carpeta assets donde están los XML MJCF incluidos por los scene files.
+
+- muscle_velocity_lowerbody.xml
+  - Quién lo llama: muscle_test.py (ruta `LOWERBODY_TEST_XML`) y por tanto usado por `MIMoVelocityLowerBodyEnv`.
+  - A quién llama:
+    - Incluye `<include file="mimo/MIMo_meta.xml"/>`.
+    - Incluye el modelo `mimo/MIMo_model_lower.xml` dentro del `worldbody`.
+  - Qué hace:
+    - Define la escena MJCF para la simulación "lower body": opciones de simulación (`timestep`, `gravity`), visual, `worldbody` con floor y el include del modelo lower. Contiene `<equality>` weld hip, y referencia a MIMo_meta.xml (sensores/actuators/tendons/actuator user fields).
+  - Notas:
+    - Aquí se establece la variable `opt.gravity` que visualiza_standup.py posteriormente modifica.
+
+- MIMo_model_lower.xml
+  - Quién lo llama: muscle_velocity_lowerbody.xml (via `<include>`).
+  - A quién llama:
+    - Define cuerpos (`body`), `joint`s y `geom`s de las piernas y caderas; define `site`s importantes (`torque_right_hip`, `BODY_25:RHip`, etc.).
+  - Qué hace:
+    - Es el modelo MJCF del lower body (joints `robot:right_hip1..3`, `robot:right_knee`, `robot:left_hip1..3`, etc.). Proporciona las `joint` y `site` a los que los sensores/actuators en MIMo_meta.xml se refieren.
+  - Notas:
+    - Importante para _mapeo_ entre actuadores `act:...` y joints `robot:...`.
+
+- MIMo_meta.xml
+  - Quién lo llama: muscle_velocity_lowerbody.xml (incorporado al `mujoco`).
+  - A quién llama:
+    - Define `sensor` entries, `actuator` entries (con user fields: VMAX, FMAXs en `actuator_user`), `tendon` (vacío o reducido para lowerbody), `equality`, contactos, etc.
+  - Qué hace:
+    - Añade actuadores (`<actuator>` con nombres `act:right_hip_flex`, `act:left_hip_flex`, etc.), sensores (`torque`, acelerómetros si los hay), y otros metadatos necesarios por `MuscleModel` y `MIMoEnv`.
+  - Notas:
+    - Fue necesario limpiar duplicados de actuadores y referencias a sensores inexistentes (vestibular) durante la depuración previa.
+
+- actuation.py
+  - Quién lo llama: muscle.py, mimo_env.py.
+  - A quién llama:
+    - Define clase base `ActuationModel` y `SpringDamperModel`.
+  - Qué hace:
+    - Proporciona interfaz que `MIMoEnv` espera para `actuation_model`: `get_action_space()`, `action()`, `reset()`, `substep_update()`, etc. `MuscleModel` hereda de `ActuationModel`.
+
+- muscle.py
+  - Quién lo llama: visualiza_standup.py (solo para tipo-check), muscle_test.py (pasa `actuation_model=MuscleModel`), y mimo_env.py (cuando se instancia `actuation_model(self, self.mimo_actuators)`).
+  - A quién llama:
+    - Usa utilidades de `mimoEnv.utils` para encontrar qpos/qvel indices, lee `actuator_user` fields de actuators (VMAX, FMAX), ajusta `model.actuator_gear` para aplicar torques (método `_apply_torque`), gestiona actividad y dinámica muscular.
+  - Qué hace:
+    - Implementación completa del modelo de músculos que convierte activaciones en torque para MuJoCo, multiplica acción space por 2 y reescribe `actuator_gear` en cada substep.
+
+- utils.py
+  - Quién lo llama: `mimoActuation.muscle`, mimo_env.py.
+  - A quién llama: utilidades internas.
+  - Qué hace:
+    - Proporciona funciones helper para mapear joint -> qpos adr, get names, lock joints, set qpos, etc. (usado por `MuscleModel._get_actuated_joints` y por `MIMoEnv`).
+
+- Sensory modules (pueden aparecer si habilitados)
+  - proprio.py
+    - Quién lo llama: mimo_env.py (proprio_setup).
+    - Qué hace: implementa `SimpleProprioception` que lee `env.data.qpos`, `qvel`, `torque` y compone la observación proprioceptiva.
+  - touch.py, vision.py, vestibular.py
+    - Proporcionan las implementaciones de touch/vision/vestibular usadas por `MIMoEnv` si `*_params` no es None.
+
+- Otros archivos auxiliares referenciados en el flujo
+  - `results/.../telemetry.csv`
+    - Quién lo llama: visualiza_standup.py (CSV_PATH). Contiene columnas `u_flex_0..2`, `u_ext_0..2` por timestep.
+    - Qué hace: fuente de activaciones a reproducir.
+  - `results/.../run_config.txt`
+    - Quién lo llama: `_read_fmax_from_runconfig()` en visualiza_standup.py.
+    - Qué hace: opcionalmente contiene pesos `flex_muscles:` y `ext_muscles:` para calibrar fmax.
+
+- Rutas y constantes relevantes
+  - `SCENE_DIRECTORY` (en mimo_env.py) → path absoluto a assets (donde están `.xml`).
+  - `LOWERBODY_TEST_XML` (en muscle_test.py) → `os.path.join(SCENE_DIRECTORY, "muscle_velocity_lowerbody.xml")`.
+
+Resumen del flujo de ejecución (paso a paso):
+1. Ejecutas `python examples/visualiza_standup.py`.
+2. visualiza_standup.py importa mimoEnv. Al importar, __init__.py corre y registra los entornos Gym (`register(...)`), asociando `MIMoVelocityLowerBody-v0` con `mimoEnv.envs:MIMoVelocityLowerBodyEnv`.
+3. visualiza_standup.py llama `gym.make('MIMoVelocityLowerBody-v0', render_mode='human')`.
+4. Gym solicita el entry_point `mimoEnv.envs:MIMoVelocityLowerBodyEnv`. Python importa `mimoEnv.envs` (que a su vez importa `mimoEnv.envs.muscle_test`) y localiza la clase `MIMoVelocityLowerBodyEnv`.
+5. Al instanciar `MIMoVelocityLowerBodyEnv.__init__` (en muscle_test.py) se llama `MIMoStaticMuscleTestEnv.__init__` → `MIMoDummyEnv.__init__` → `MIMoEnv.__init__` (en mimo_env.py) pasando `model_path` = muscle_velocity_lowerbody.xml.
+6. `MIMoEnv.__init__` carga el XML (MuJoCo), que es muscle_velocity_lowerbody.xml. Ese XML incluye MIMo_meta.xml y MIMo_model_lower.xml.
+   - MIMo_meta.xml define actuadores/sensores (ej. `act:right_hip_flex` y valores `actuator_user` con VMAX,FMAX).
+   - MIMo_model_lower.xml define joints `robot:right_hip1..` y `robot:left_hip1..`, geom, sites.
+7. `MIMoEnv._initialize_simulation()` crea `self.model` y `self.data`, llena `mimo_actuators` y `mimo_joints`, y finalmente crea la instancia de `actuation_model` (ej. `MuscleModel`) con `self` y `self.mimo_actuators`.
+8. `MuscleModel` lee `model.actuator_user` (VMAX y FMAXs) y configura su estado interno (fmax, vmax, mapeos de qpos/qvel).
+9. visualiza_standup.py entra en bucle, toma activaciones del CSV, combina/convierte a controles, llama `env.step(full_action)`. `env.step` llama `MIMoEnv.do_simulation` → `ActuationModel.action()` y `ActuationModel.substep_update()` que, en `MuscleModel`, actualizan torque y ajustan `model.actuator_gear` para cada substep. Luego MuJoCo integra estado.
+10. visualiza_standup.py registra en memoria qpos y activaciones; al acabar guarda CSV e imagen en `results/simulation/<fecha>_simulacion/`.
+
+Entregables ya preparados en este paso:
+- El esquema detallado arriba (archivo por archivo, llamadas y propósito).
+- Si quieres, puedo generar:
+  - Un diagrama visual (Mermaid) del grafo de dependencias.
+  - Un archivo README corto describiendo cómo ejecutar visualiza_standup.py y dónde encontrar los outputs.
+  - Un listado más pormenorizado (funciones y variables importantes por archivo) si quieres profundizar en alguno concreto.
+
+Siguiente paso que propongo (elige):
+- (A) Generar un diagrama Mermaid del flujo (útil para documentación).
+- (B) Crear `README` en examples con instrucciones de ejecución y rutas de output.
+- (C) Proporcionar un listado por archivo con funciones/clases y líneas clave (más técnico).
+¿Qué prefieres que haga ahora?

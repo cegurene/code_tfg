@@ -1,0 +1,182 @@
+# ============================================================================
+# ASSISTIVE EXOSKELETON - IMPEDANCE CONTROL CONFIGURATION
+# ============================================================================
+# 
+# This configuration file centralizes all impedance control parameters to ensure
+# consistency across the C++ impedance_node and Python GUI components.
+# 
+# Author: Professional Development Team
+# Date: September 26, 2025
+# Version: 1.0
+# 
+# PARAMETER FLOW:
+# 1. This config file defines all default values
+# 2. impedance_node reads these values on startup
+# 3. GUI reads these values for initial display
+# 4. Runtime updates via ROS2 services override these defaults
+# ============================================================================
+
+# ROS2 Node Configuration
+ros2:
+  node_name: "impedance_node"           # string: ROS2 node identifier
+  timer_period_ms: 10                   # int: Control loop period in milliseconds (100Hz)
+  
+# Motor Hardware Configuration  
+motors:
+  # CAN IDs for MAB Robotics MD80 motors
+  left_motor_id: 308                    # int: CAN ID for left hip motor
+  right_motor_id: 308                   # int: CAN ID for right hip motor
+  
+  # Motor array ordering (matches drive_ids in messages)
+  # Index 0 = Left Motor (ID 10)
+  # Index 1 = Right Motor (ID 11)
+  
+# ============================================================================
+# IMPEDANCE CONTROL PARAMETERS
+# ============================================================================
+# 
+# Mathematical Model: τ = torque_ff + kP*(pos_target - pos) + kD*(vel_target - vel)
+# Final Output: τ_output = clip(τ, -max_output, +max_output)
+#
+# Where:
+# - τ (tau): Desired torque command
+# - torque_ff: Feedforward torque (offset_torque in messages)
+# - kP: Proportional gain (position error correction)
+# - kD: Derivative gain (velocity error damping) 
+# - pos_target, vel_target: Desired position/velocity setpoints
+# - pos, vel: Current motor position/velocity feedback
+# - max_output: Safety torque limit (±Nm)
+# ============================================================================
+
+impedance_control:
+  
+  # Proportional Gains (kP) - Position Error Correction
+  # Type: float array [left_motor, right_motor]
+  # Units: Nm/rad
+  # Range: 0.1 - 50.0 (typical human joint stiffness)
+  # Description: Higher values = stiffer position control, faster convergence
+  #              Lower values = more compliant, gentler control
+  kp_gains: [0.0, 0.0]
+  
+  # Derivative Gains (kD) - Velocity Error Damping  
+  # Type: float array [left_motor, right_motor]
+  # Units: Nm·s/rad
+  # Range: 0.001 - 2.0 (avoid oscillations)
+  # Description: Higher values = more damping, smoother motion
+  #              Lower values = less damping, may oscillate
+  kd_gains: [0.0, 0.0]
+  
+  # Torque Offset (Feedforward Torque)
+  # Type: float array [left_motor, right_motor] 
+  # Units: Nm
+  # Range: -10.0 to +10.0 (within motor capabilities)
+  # Description: Constant torque bias applied regardless of position/velocity
+  #              Positive = extension assist, Negative = flexion assist
+  #              Used for gravity compensation or assistance patterns
+  offset_torque: [0.0, 0.0]
+  
+  # Maximum Output Torque Limits
+  # Type: float array [left_motor, right_motor]
+  # Units: Nm  
+  # Range: 1.0 - 15.0 (MD80 motor limits)
+  # Description: Safety limits to prevent excessive torques
+  #              Must be within motor specifications and safety requirements
+  max_output_torque: [4.0, 4.0]
+
+# ============================================================================
+# GUI DISPLAY PARAMETERS
+# ============================================================================
+# These parameters control the initial values and ranges shown in the GUI
+# widgets when the application starts up.
+# ============================================================================
+
+gui_settings:
+  
+  # Spin Box Value Ranges (QDoubleSpinBox limits)
+  parameter_ranges:
+    
+    kp_range:
+      minimum: 0.0                      # float: Minimum allowed kP value
+      maximum: 20.0                     # float: Maximum allowed kP value  
+      step: 0.1                         # float: Increment step size
+      decimals: 2                       # int: Number of decimal places
+      
+    kd_range:
+      minimum: 0.0                      # float: Minimum allowed kD value
+      maximum: 2.0                      # float: Maximum allowed kD value
+      step: 0.01                        # float: Increment step size  
+      decimals: 3                       # int: Number of decimal places
+      
+    offset_range:
+      minimum: -8.0                     # float: Minimum torque offset (Nm)
+      maximum: 8.0                      # float: Maximum torque offset (Nm)
+      step: 0.1                         # float: Increment step size
+      decimals: 2                       # int: Number of decimal places
+
+  # Widget Update Behavior
+  real_time_updates: true               # bool: Enable real-time parameter updates
+  update_rate_hz: 10                    # int: GUI update frequency (Hz)
+
+# ============================================================================  
+# SAFETY PARAMETERS
+# ============================================================================
+# Critical safety limits and emergency behaviors
+# ============================================================================
+
+safety:
+  
+  # Emergency Limits (absolute maximum values)
+  emergency_torque_limit: 8.0           # float: Absolute max torque (Nm) - hardware protection
+  
+  # Parameter Validation Ranges
+  validation:
+    kp_max_safe: 30.0                   # float: Maximum safe kP value
+    kd_max_safe: 3.0                    # float: Maximum safe kD value  
+    offset_max_safe: 10.0               # float: Maximum safe offset magnitude
+  
+  # Behavior on Parameter Limit Violations
+  limit_violation_action: "clamp"       # string: "clamp" | "reject" | "shutdown"
+  
+# ============================================================================
+# SYSTEM INTEGRATION 
+# ============================================================================
+# ROS2 topics, services, and message configurations
+# ============================================================================
+
+ros2_interface:
+  
+  # Published Topics
+  topics:
+    impedance_command: "/impedance_command"        # ImpedanceCommand messages
+    motion_command: "/motion_command"              # MotionCommand messages (feedforward)
+    
+  # Service Names  
+  services:
+    update_parameters: "/update_impedance_parameters"    # Parameter update service
+    start_stop_control: "/start_stop_impedance"          # Publishing control service
+    
+  # Message Publishing Rates
+  publishing:
+    impedance_rate_hz: 100              # int: ImpedanceCommand publish frequency
+    motion_rate_hz: 100                 # int: MotionCommand publish frequency
+
+# ============================================================================
+# LOGGING & DEBUGGING
+# ============================================================================
+# Configuration for system monitoring and troubleshooting
+# ============================================================================
+
+logging:
+  
+  # Log Levels (ROS2 standard)
+  impedance_node_level: "INFO"         # string: DEBUG|INFO|WARN|ERROR|FATAL
+  gui_node_level: "INFO"               # string: DEBUG|INFO|WARN|ERROR|FATAL
+  
+  # Debug Features
+  enable_parameter_logging: true        # bool: Log parameter updates
+  enable_timing_logs: false             # bool: Log control loop timing
+  enable_service_logs: true            # bool: Log service call details
+  
+  # Performance Monitoring
+  monitor_control_frequency: true       # bool: Monitor actual vs target frequency
+  log_frequency_warnings: true         # bool: Warn if frequency drops below target

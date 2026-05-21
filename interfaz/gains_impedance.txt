@@ -1,0 +1,231 @@
+================================================================================
+PARÁMETROS DE IMPEDANCIA Y TRAYECTORIA SINUSOIDAL - GUÍA COMPLETA
+================================================================================
+
+================================================================================
+📊 PARÁMETROS DE IMPEDANCIA (Manual Control)
+================================================================================
+
+1. kP (Ganancia Proporcional)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rango UI:         0.0 - 10.0 Nm/rad
+Step:             0.2
+Unidades:         Newton·metro / radián
+
+¿Qué es?
+- Controla la "rigidez" del motor
+- Determina cuánto torque genera por cada grado de error
+- Fórmula: torque = kp × (posición_deseada - posición_actual)
+
+Valores típicos para prueba:
+- Bajo:          2.0-3.0    (motor muy suave, débil)
+- Medio:         5.0-7.0    ✅ RECOMENDADO PARA INICIO
+- Alto:          8.0-10.0   (motor muy resistente, fuerte)
+
+Ejemplo:
+- Si kp=5.0 y error=1 rad (57°): torque = 5.0 × 1 = 5 Nm
+- Si kp=10.0 y error=1 rad: torque = 10.0 × 1 = 10 Nm
+
+
+2. kD (Ganancia Derivativa)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rango UI:         0.0 - 10.0 Nm·s/rad
+Step:             0.1
+Unidades:         Newton·metro·segundo / radián
+
+¿Qué es?
+- Controla el "amortiguamiento" del motor
+- Frena el movimiento proporcional a la velocidad
+- Fórmula: torque = kd × velocidad_actual
+- Evita oscilaciones y suaviza el movimiento
+
+Valores típicos para prueba:
+- Bajo:          0.2-0.5    (respuesta rápida, puede oscilar)
+- Medio:         1.0-2.0    ✅ RECOMENDADO PARA INICIO
+- Alto:          3.0-5.0    (muy amortiguado, lento)
+
+Ejemplo:
+- Si kd=2.0 y velocity=0.5 rad/s: torque_amortiguamiento = 2.0 × 0.5 = 1 Nm (frena)
+
+
+3. Offset (Torque de Compensación)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rango UI:         0.0 - 10.0 Nm
+Step:             0.1
+Unidades:         Newton·metro
+
+¿Qué es?
+- Torque constante de gravedad/fricción a compensar
+- Se suma al comando impedancia
+- Fórmula: torque_total = (kp×error + kd×velocity) + offset
+
+Valores típicos para prueba:
+- Sin gravedad:      0.0-0.5    (sin load)
+- Con gravedad:      0.5-2.0    ✅ RECOMENDADO
+- Mucha gravedad:    2.0-4.0    (exoesqueleto pesado)
+
+Ejemplo:
+- Sin offset: motor lucha contra gravedad constantemente
+- Con offset=1.5: motor "anula" 1.5 Nm de gravedad
+
+
+================================================================================
+🎯 PARÁMETROS DE TRAYECTORIA MANUAL
+================================================================================
+
+1. Manual (Referencia manual de posición)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rango UI:         −90.0 a +90.0°
+Step:             1.0
+Unidades:         Grados (se convierte a radianes al enviar)
+
+¿Qué es?
+- Spinbox de posición manual para la cadera izquierda en modo IMPEDANCIA.
+- Se usa como setpoint cuando el checkbox `left_hip_manual_enable` está activado.
+
+Valores típicos para prueba:
+- Inicial seguro:   0°
+- Pequeño:          10° – 20°
+- Medio:            30° – 45°
+- Grande:           60° – 90° (con precaución y kp/kd altos)
+
+Ejemplo:
+- Con setpoint=20° → 0.349 rad; si kp=5.0 y kd=1.5, torque ≈ 5.0×0.349 + 1.5×velocidad.
+
+
+================================================================================
+🌊 PARÁMETROS DE TRAYECTORIA SINUSOIDAL
+================================================================================
+
+Fórmula de movimiento:
+posición(t) = offset + amplitude × sin(2π × freq × t)
+
+
+1. Amplitude (degrees)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rango UI:         0.0 - 90.0°
+Unidades:         Grados (degrees)
+
+¿Qué es?
+- Amplitud máxima de la oscilación desde el offset
+- Define el "rango" del movimiento
+- Motor oscila: offset ± amplitude
+
+Valores típicos:
+- Muy pequeño:     5-10°       ✅ RECOMENDADO (prueba segura)
+- Pequeño:         10-20°      (movimiento perceptible)
+- Medio:           20-45°      (movimiento grande)
+- Grande:          45-90°      (movimiento muy amplio)
+
+Ejemplo:
+- offset=0°, amplitude=10° → motor oscila entre -10° y +10°
+- offset=45°, amplitude=10° → motor oscila entre 35° y 55°
+
+
+2. Frequency (Hz)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rango UI:         0.1 - 2.0 Hz
+Unidades:         Ciclos por segundo (Hertz)
+
+¿Qué es?
+- Velocidad de la oscilación
+- Determina cuántas oscilaciones completas por segundo
+
+Valores típicos:
+- Muy lento:      0.1-0.25 Hz  (4-10 segundos por ciclo)
+- Lento:          0.25-0.5 Hz  ✅ RECOMENDADO (2-4 sec/ciclo)
+- Normal:         0.5-1.0 Hz   (1-2 segundos por ciclo)
+- Rápido:         1.0-2.0 Hz   (0.5-1 segundo por ciclo)
+
+Período = 1/frecuencia:
+- freq=0.5 Hz → período=2 segundos (un ciclo cada 2 seg)
+- freq=1.0 Hz → período=1 segundo (un ciclo cada 1 seg)
+
+
+3. Offset (degrees)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rango UI:         -90.0 - 90.0°
+Unidades:         Grados (degrees)
+
+¿Qué es?
+- Posición central alrededor de la cual oscila
+- Define el centro de la trayectoria sinusoidal
+- Es independiente del offset torque (impedancia)
+
+Valores típicos:
+- Neutral:         0°          ✅ RECOMENDADO
+- Flexión:         30-45°      (motor posicionado)
+- Extensión:       -30 a -45°  (motor posicionado)
+
+Ejemplo:
+- offset=0°, amplitude=15° → oscila entre -15° y +15° (simétrico)
+- offset=30°, amplitude=15° → oscila entre 15° y 45° (asimétrico)
+
+
+4. Cycles (número de ciclos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rango UI:         0 - 1000 ciclos
+Unidades:         Número entero
+
+¿Qué es?
+- Cuántas oscilaciones completas ejecutar
+- 0 = infinito (sigue oscilando indefinidamente)
+
+Valores típicos:
+- Infinito:        0           ✅ RECOMENDADO (sinusoidal continua)
+- Pocos:           1-3         (solo 1-3 oscilaciones)
+- Normal:          5-10        (5-10 oscilaciones)
+- Muchos:          50-100      (larga secuencia)
+
+Tiempo total = cycles / frequency:
+- cycles=3, freq=0.5 Hz → tiempo = 3/0.5 = 6 segundos
+- cycles=10, freq=1.0 Hz → tiempo = 10/1.0 = 10 segundos
+
+
+================================================================================
+🧮 EJEMPLO DE SIMULACIÓN
+================================================================================
+
+Con los valores recomendados:
+
+t=0s:    pos = 0° + 15° × sin(0°) = 0°
+t=0.5s:  pos = 0° + 15° × sin(90°) = 15°  (pico máximo)
+t=1s:    pos = 0° + 15° × sin(180°) = 0°
+t=1.5s:  pos = 0° + 15° × sin(270°) = -15° (pico mínimo)
+t=2s:    pos = 0° + 15° × sin(360°) = 0°   (ciclo completo)
+
+El motor oscilaría: 0° → 15° → 0° → -15° → 0° cada 2 segundos
+
+
+================================================================================
+⚠️ TROUBLESHOOTING
+================================================================================
+
+Problema: Motor NO se mueve con control manual
+Solución: Aumentar kp (probablemente está muy bajo)
+          - Probar: kp=8.0 o kp=10.0
+
+Problema: Motor oscila o vibra
+Solución: Reducir kp o aumentar kd
+          - Probar: kp=3.0, kd=2.0
+
+Problema: Motor lento/sin respuesta
+Solución: Aumentar kp y verificar offset
+          - Probar: kp=7.0, offset=2.0
+
+Problema: Sinusoidal demasiado rápida
+Solución: Reducir frequency
+          - Probar: freq=0.25 Hz (4 segundos por ciclo)
+
+Problema: Sinusoidal demasiado lenta
+Solución: Aumentar frequency
+          - Probar: freq=1.0 Hz (1 segundo por ciclo)
+
+Problema: Movimiento muy pequeño/grande
+Solución: Ajustar amplitude
+          - Pequeño: amplitude=5°
+          - Grande: amplitude=25°
+
+================================================================================
+
+

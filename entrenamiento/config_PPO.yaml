@@ -1,0 +1,58 @@
+# En config_PPO.yaml
+hydra:
+  run:
+    dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/${env.algorithm}/${env.env_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    
+
+# task and env
+env:
+  algorithm: PPO
+  num_cpu: 1
+  use_delayed_sensors: True
+  env_name: nair_walk_h0918KneeExoRS2-v0 #nair_walk_h0918_KneeExo_GH_v0   
+                                        #"nair_walk_h0918_exo_knee-v1"
+                                        #"ExoLegSpasticityFlexoExtEnv-v0"
+  torch_dir: null
+
+# checkpoint (para continuar entrenamiento)
+checkpoint:
+  resume_from: null
+  #resume_from: /home/carlos/Escritorio/TFG/code_tfg/inferencia/models/checkpoint_3272704.pt
+  # Ruta al checkpoint .pt para continuar, ej: "/ruta/completa/checkpoint_10000.pt"
+
+# collector
+collector:
+  frames_per_batch: 4096  # Large batch for stability (aligned with paper's Isaac Gym setup)
+  #frames_per_batch: 4000
+  total_frames: 10_000_000
+  learning_epochs: 10  # Increased from 5 for better utilization of batch data
+  buffer_size: 4096  # Match frames_per_batch
+
+# logger
+logger:
+  #backend: wandb
+  exp_name: nair_walk_h0918_exo_knee_Espasticity_PPO
+  write_interval: 100_000
+  test_interval: 100_000
+  check_interval: 100_000
+  num_test_episodes: 5
+
+# Optim
+optim:
+  lr: 3e-4  # Aligned with paper (2.5e-4 to 3e-4 range)
+  optimizer: KLAdaptiveRL
+  optimizer_kwargs: {"kl_threshold": 0.008}
+  weight_decay: 0.0
+  anneal_lr: True
+
+# loss
+hiperparameters:
+  clip_epsilon: 0.2
+  entropy_coef: 0.001 #0.9
+  critic_coef: 1.0
+  lmbda: 0.95
+  gamma: 0.99 
+  batch_size: 1024
+  #mini_batch_size : 64
+  mini_batch_size : 256
+  max_grad_norm: 0.5 #1.0
