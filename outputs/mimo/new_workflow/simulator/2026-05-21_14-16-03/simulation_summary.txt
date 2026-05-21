@@ -4,9 +4,9 @@ MIMo TRAJECTORY TRACKING SIMULATION - SUMMARY
 
 EXECUTION INFO
 --------------------------------------------------------------------------------
-timestamp: 2026-05-21T12:27:50
-command: mimo/scripts/visualiza_standup_trajectory_tracking.py
-run_dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-05-21_12-27-39_trajectory_tracking
+timestamp: 2026-05-21T14:16:14
+command: mimo/scripts/visualiza_standup_trajectory_tracking.py --cycles 5
+run_dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-05-21_14-16-03
 
 ENVIRONMENT SETUP
 --------------------------------------------------------------------------------
@@ -43,8 +43,8 @@ SIMULATION RESULTS
 n_steps: 1050
 sim_dt: 0.010000000s
 duration_s: 10.500000s
-csv_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-05-21_12-27-39_trajectory_tracking/hip_tracking_telemetry.csv
-plot_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-05-21_12-27-39_trajectory_tracking/hip_tracking_summary.png
+csv_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-05-21_14-16-03/hip_tracking_telemetry.csv
+plot_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-05-21_14-16-03/hip_tracking_summary.png
 
 MUSCLE MODEL PARAMETERS
 --------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ lmax: 1.6          (default)
 lmin: 0.5          (default)
 mass_scale: 1.0          (default)
 muscle_tau: 0.02          (default)
-pid_activation_scale: 1.0          (default: 10.0)
+pid_activation_scale: 1.0          (default)
 plot_fps: 60.0          (default)
 plot_path:           (default)
 reference_angle_column: hip_angle_mean          (default)

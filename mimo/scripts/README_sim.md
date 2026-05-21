@@ -15,8 +15,7 @@ Requisitos
 - `gymnasium`, `numpy`, `matplotlib`, `mimoActuation.muscle.MuscleModel` (opcional si el entorno usa MuscleModel).
 
 Archivo principal y ruta
-- Script: `examples/visualiza_standup_trajectory_tracking.py`
-- README generado: `examples/visualiza_standup_README.md`
+- Script: `mimo/scripts/old/visualiza_standup_trajectory_tracking.py`
 
 Configuración principal dentro del script
 - `ENV_ID`: id del entorno Gym a usar. Por defecto en el script: `MIMoVelocityLowerBody-v0`.
@@ -40,17 +39,17 @@ Qué hace el script (pasos clave)
 6. Al finalizar (o con Ctrl-C): guarda CSV de telemetría, imagen resumen y un archivo `simulation_summary.txt` con configuración y metadatos.
 
 Salida generada (por ejecución)
-- Carpeta: `code_tfg/outputs/mimo/new_workflow/simulator/<timestamp>_trajectory_tracking/`
+- Carpeta: `code_tfg/outputs/mimo/new_workflow/simulator/<timestamp>/`
   - `hip_tracking_telemetry.csv` — telemetría con ángulos, torque proxy y activaciones flex/ext.
   - `hip_tracking_summary.png` — figura PNG con ángulos, torque y activaciones.
   - `simulation_summary.txt` — metadatos, parámetros PID y configuración del modelo.
 
 Nota sobre el nuevo flujo
-- Este es el flujo principal del simulador. Los archivos se guardan por defecto en `code_tfg/outputs/mimo/new_workflow/simulator/<timestamp>_trajectory_tracking/`.
+- Este es el flujo principal del simulador. Los archivos se guardan por defecto en `code_tfg/outputs/mimo/new_workflow/simulator/<timestamp>/`.
 
 Ejemplo de ejecución del nuevo simulador (usa `--run-dir` para cambiar destino):
 ```bash
-python3 examples/visualiza_standup_trajectory_tracking.py --reference-csv mimo/scripts/healthy_hip_reference.csv
+python3 mimo/scripts/visualiza_standup_trajectory_tracking.py --reference-csv mimo/scripts/healthy_hip_reference.csv
 ```
 
 Ejemplos de uso
@@ -58,13 +57,13 @@ Ejemplos de uso
 1) Ejecutar con la referencia por defecto embebida en el script:
 
 ```bash
-python examples/visualiza_standup_trajectory_tracking.py
+python mimo/scripts/visualiza_standup_trajectory_tracking.py
 ```
 
 2) Usar otra referencia CSV y ajustar el directorio de salida:
 
 ```bash
-python examples/visualiza_standup_trajectory_tracking.py \
+python mimo/scripts/visualiza_standup_trajectory_tracking.py \
   --reference-csv mimo/scripts/healthy_hip_reference.csv \
   --run-dir code_tfg/outputs/mimo/new_workflow/simulator/test_run
 ```
@@ -91,11 +90,11 @@ Extensiones posibles
 
 ## Seguimiento de trayectoria de cadera
 
-Este es el flujo principal del simulador: `examples/visualiza_standup_trajectory_tracking.py` genera una simulación de seguimiento de trayectoria para ambas caderas usando una referencia CSV, un controlador PID y el modelo muscular del entorno.
+Este es el flujo principal del simulador: `mimo/scripts/visualiza_standup_trajectory_tracking.py` genera una simulación de seguimiento de trayectoria para ambas caderas usando una referencia CSV, un controlador PID y el modelo muscular del entorno.
 
 ### Qué genera
 
-La ejecución guarda su salida por defecto en `code_tfg/outputs/mimo/new_workflow/simulator/<timestamp>_trajectory_tracking/`:
+La ejecución guarda su salida por defecto en `code_tfg/outputs/mimo/new_workflow/simulator/<timestamp>/`:
 
 - `hip_tracking_telemetry.csv` — telemetría con ángulos, torque proxy y activaciones flex/ext de cada cadera.
 - `hip_tracking_summary.png` — figura resumen con ángulos, torque y activaciones.
@@ -104,7 +103,7 @@ La ejecución guarda su salida por defecto en `code_tfg/outputs/mimo/new_workflo
 ### Ejemplo de uso
 
 ```bash
-python3 examples/visualiza_standup_trajectory_tracking.py \
+python3 mimo/scripts/visualiza_standup_trajectory_tracking.py \
   --reference-csv mimo/scripts/healthy_hip_reference.csv
 ```
 
@@ -180,23 +179,23 @@ Todos estos parámetros usan escalado multiplicativo. Valor `1.0` significa sin 
 
 ```bash
 # Más peso y algo más de rigidez
-python3 examples/visualiza_standup_trajectory_tracking.py \
+python3 mimo/scripts/visualiza_standup_trajectory_tracking.py \
   --mass-scale 1.3 \
   --joint-stiffness-scale 1.2
 
 # Más amortiguamiento y menor fricción
-python3 examples/visualiza_standup_trajectory_tracking.py \
+python3 mimo/scripts/visualiza_standup_trajectory_tracking.py \
   --joint-damping-scale 1.5 \
   --joint-frictionloss-scale 0.8
 
 # Control más agresivo
-python3 examples/visualiza_standup_trajectory_tracking.py \
+python3 mimo/scripts/visualiza_standup_trajectory_tracking.py \
   --kp 2.3 --ki 0.18 --kd 0.12
 ```
 
 ### Nota sobre el README raíz
 
-La documentación detallada de este flujo se mantiene aquí, en `examples/README.md`, para no mezclarla con la introducción general del proyecto.
+La documentación detallada de este flujo se mantiene aquí, en `mimo/scripts/README.md`, para no mezclarla con la introducción general del proyecto.
 
 Contacto
 - Si quieres que expanda el README con ejemplos de CSV concretos, o que añada opciones CLI, dime qué flags prefieres y lo incorporo.

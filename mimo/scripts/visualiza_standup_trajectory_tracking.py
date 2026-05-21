@@ -649,7 +649,7 @@ def main() -> int:
     )
     reference.period_s = float(args.trajectory_period_s)
 
-    run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_trajectory_tracking"
+    run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     repo_root = Path(__file__).resolve().parents[2]
     run_dir = args.run_dir.strip() if args.run_dir else str(repo_root / "outputs" / "mimo" / "new_workflow" / "simulator" / run_tag)
     os.makedirs(run_dir, exist_ok=True)
@@ -985,7 +985,7 @@ def main() -> int:
             else:
                 f.write(f"{key}: {value}          (default: {default_value})\n")
 
-    print(f"CSV guardado en {csv_path}")
+    print(f"\nCSV guardado en {csv_path}")
     print(f"Imagen guardada en {plot_path}")
     print(f"Resumen guardado en {summary_path}")
     return 0
