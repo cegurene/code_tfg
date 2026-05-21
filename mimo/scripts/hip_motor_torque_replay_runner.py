@@ -337,7 +337,8 @@ def main() -> int:
             args.motor_id = 308
 
     run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_id={args.motor_id}"
-    run_dir = args.run_dir.strip() if args.run_dir else os.path.join("results", "runner", run_tag)
+    repo_root = Path(__file__).resolve().parents[2]
+    run_dir = args.run_dir.strip() if args.run_dir else str(repo_root / "outputs" / "mimo" / "runner" / run_tag)
     os.makedirs(run_dir, exist_ok=True)
 
     csv_path = args.csv_path.strip() if args.csv_path else os.path.join(run_dir, "telemetry.csv")

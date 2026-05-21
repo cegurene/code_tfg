@@ -1,10 +1,13 @@
-# visualiza_standup.py — Documentación
+# visualiza_standup_trajectory_tracking.py — Documentación
 
-Este archivo documenta `visualiza_standup.py` (ubicado en `examples/`) y explica su propósito, uso y formato esperado de datos.
+Este archivo documenta `visualiza_standup_trajectory_tracking.py` (ubicado en `examples/`) y explica su propósito, uso y formato esperado de datos.
 
 **Resumen / propósito**
-- `visualiza_standup.py` reproduce señales de activación musculares (telemetry CSV) sobre un entorno MuJoCo/Gym personalizado de MIMo y visualiza las trayectorias de cadera y activaciones musculares.
-- Sirve para inspección visual y diagnóstico de runs reales o simulados: aplica las activaciones leídas del CSV al modelo de actuación del entorno y genera una imagen con las últimas ~20s de datos y metadatos.
+- `visualiza_standup_trajectory_tracking.py` genera una simulación de seguimiento de trayectoria para ambas caderas usando una referencia CSV, un controlador PID y el modelo muscular del entorno.
+- Sirve para inspección visual y diagnóstico del seguimiento de cadera: compara la referencia con la simulación y guarda telemetría, figura resumen y metadatos.
+
+**Script legado**
+- `visualiza_standup.py` queda como flujo antiguo de reproducción de activaciones musculares. Si necesitas el simulador principal, usa `visualiza_standup_trajectory_tracking.py`.
 
 Requisitos
 - Python con dependencias del proyecto (ver `requirements.txt`).
@@ -12,12 +15,12 @@ Requisitos
 - `gymnasium`, `numpy`, `matplotlib`, `mimoActuation.muscle.MuscleModel` (opcional si el entorno usa MuscleModel).
 
 Archivo principal y ruta
-- Script: `examples/visualiza_standup.py`
+- Script: `examples/visualiza_standup_trajectory_tracking.py`
 - README generado: `examples/visualiza_standup_README.md`
 
 Configuración principal dentro del script
 - `ENV_ID`: id del entorno Gym a usar. Por defecto en el script: `MIMoVelocityLowerBody-v0`.
-- `CSV_PATH`: ruta al CSV de telemetry que contiene activaciones musculares. Ejemplo: `results/hip_motor_real/.../telemetry.csv`.
+- `REFERENCE_CSV`: ruta al CSV de referencia de cadera usado para el seguimiento. Por defecto apunta al CSV incluido junto al script.
 - `DESFASE_CADERA`: desfase entre señales izquierda/derecha (fracción del ciclo, 0.5 = 50%).
 - `CAM_DISTANCIA`: distancia de cámara (visualización).
 - `HIP_SIGN_LEFT`, `HIP_SIGN_RIGHT`: 1 o -1 para invertir la polaridad de la señal de cadera si la trayectoria aparece invertida.
@@ -30,70 +33,69 @@ Formato de CSV esperado
 
 Qué hace el script (pasos clave)
 1. Carga `mimoEnv` y crea el entorno `ENV_ID` en modo `render_mode='human'`.
-2. Lee las activaciones desde `CSV_PATH` (columnas `u_flex_*` y `u_ext_*`).
-3. Construye señales para ambas caderas: la original (derecha) y otra desfasada (`DESFASE_CADERA`) para simular marcha alternante.
-4. Intenta aplicar matrices `fmax`/`vmax` extraídas de `run_config.txt` (si existe) al `env.actuation_model` cuando es instancia de `MuscleModel`.
-5. En cada paso de simulación: combina las 3 unidades flex/ext en una sola señal por cadera (promedio o ponderado por `fmax`), calcula torque proxy y mapea ese torque/activación al vector `action` esperado por el entorno (varias heurísticas según `action_space` y modelo de actuacion).
-6. Renderiza la simulación y registra ángulos/activaciones en memoria.
-7. Al finalizar (o con Ctrl-C): guarda CSV de ángulos, imagen con los últimos ~20s y un archivo `simulation_info.txt` con metadatos y análisis rápido (frecuencia dominante, picos, etc.).
+2. Lee la referencia de cadera desde `REFERENCE_CSV`.
+3. Ejecuta un controlador PID para generar activaciones musculares y seguir la trayectoria objetivo.
+4. Ajusta el modelo mecánico con los factores de escala (`--mass-scale`, `--joint-stiffness-scale`, etc.) si se pasan por CLI.
+5. Renderiza la simulación y registra ángulos, torque proxy y activaciones.
+6. Al finalizar (o con Ctrl-C): guarda CSV de telemetría, imagen resumen y un archivo `simulation_summary.txt` con configuración y metadatos.
 
 Salida generada (por ejecución)
-- Carpeta: `results/simulation/<timestamp>_simulacion/`
-  - `hip_angles_log.csv` — CSV con ángulos registrados y activaciones usadas.
-  - `hip_and_activations.png` — figura PNG con ángulos y activaciones (últimos ~20s).
-  - `simulation_info.txt` — metadatos y análisis rápido (frecuencias, picos, configuraciones aplicadas).
+- Carpeta: `code_tfg/outputs/mimo/new_workflow/simulator/<timestamp>_trajectory_tracking/`
+  - `hip_tracking_telemetry.csv` — telemetría con ángulos, torque proxy y activaciones flex/ext.
+  - `hip_tracking_summary.png` — figura PNG con ángulos, torque y activaciones.
+  - `simulation_summary.txt` — metadatos, parámetros PID y configuración del modelo.
 
 Nota sobre el nuevo flujo
-- Los nuevos scripts de simulación usan por defecto la carpeta `results/new_workflow/simulator/<timestamp>_trajectory_tracking/`. Ahí se encuentra el `hip_tracking_telemetry.csv`, `hip_tracking_summary.png`, `run_config.txt` y `simulation_info.txt`.
+- Este es el flujo principal del simulador. Los archivos se guardan por defecto en `code_tfg/outputs/mimo/new_workflow/simulator/<timestamp>_trajectory_tracking/`.
 
 Ejemplo de ejecución del nuevo simulador (usa `--run-dir` para cambiar destino):
 ```bash
-python3 examples/visualiza_standup_trajectory_tracking.py --reference-csv mimoEnv/exo_motor_custom/healthy_hip_reference.csv
+python3 examples/visualiza_standup_trajectory_tracking.py --reference-csv mimo/scripts/healthy_hip_reference.csv
 ```
 
 Ejemplos de uso
 
-1) Ejecutar con el CSV por defecto embebido en el script (ajusta `CSV_PATH` antes):
+1) Ejecutar con la referencia por defecto embebida en el script:
 
 ```bash
-python examples/visualiza_standup.py
+python examples/visualiza_standup_trajectory_tracking.py
 ```
 
-2) Visualización rápida desde otro CSV (editar `CSV_PATH` al inicio del script) y luego ejecutar:
+2) Usar otra referencia CSV y ajustar el directorio de salida:
 
 ```bash
-# editar examples/visualiza_standup.py: CSV_PATH = 'results/hip_motor_real/.../telemetry.csv'
-python examples/visualiza_standup.py
+python examples/visualiza_standup_trajectory_tracking.py \
+  --reference-csv mimo/scripts/healthy_hip_reference.csv \
+  --run-dir code_tfg/outputs/mimo/new_workflow/simulator/test_run
 ```
 
 3) Cambiar entorno o parámetros en la cabecera del script:
 
 ```python
 ENV_ID = 'MIMoStandup-v0'
-CSV_PATH = 'results/hip_motor_real/.../telemetry.csv'
-DESFASE_CADERA = 0.5
+REFERENCE_CSV = 'mimo/scripts/healthy_hip_reference.csv'
+TRAJECTORY_PERIOD_S = 4.0
 MASS_SCALE = 1.0
 ```
 
 Notas y recomendaciones
-- Antes de ejecutar, verifica que `CSV_PATH` apunte a un `telemetry.csv` compatible (tiene cabecera con `u_flex_*` y `u_ext_*`).
-- Si el entorno no expone `env.actuation_model` compatible o las matrices `fmax`/`vmax`, el script continuará usando un fallback de medias.
-- Si usas `MUSCLE` actuation model asegúrate de que `env.action_space` acepte vectores `2*n_actuators` (neg/pos) o el script aplicará heurísticas de mapeo.
-- Para depuración, revisa los prints periódicos (cada `PRINT_EVERY` steps) que muestran índices de actuadores, valores enviados y estimaciones de torque.
+- Antes de ejecutar, verifica que `REFERENCE_CSV` apunte a un CSV de cadera válido.
+- Si quieres reproducir el flujo antiguo, consulta `visualiza_standup.py` como referencia histórica.
+- Para depuración, revisa los prints periódicos del seguimiento de trayectoria (error, activaciones y torque proxy).
 
 Extensiones posibles
-- Añadir argumento CLI para pasar `--csv` y `--env` en vez de editar el archivo.
-- Exportar la imagen y CSV con nombre determinista en función del CSV origen (actualmente usa timestamp por ejecución).
+- Añadir argumento CLI para pasar `--reference-csv` y `--env` en vez de editar el archivo.
+- Exportar la imagen y CSV con nombre determinista en función de la referencia origen.
 
 ---
 
 ## Seguimiento de trayectoria de cadera
 
-Este repositorio también incluye el script `examples/visualiza_standup_trajectory_tracking.py`, que genera una simulación de seguimiento de trayectoria para ambas caderas usando una referencia CSV, un controlador PID y el modelo muscular del entorno.
+Este es el flujo principal del simulador: `examples/visualiza_standup_trajectory_tracking.py` genera una simulación de seguimiento de trayectoria para ambas caderas usando una referencia CSV, un controlador PID y el modelo muscular del entorno.
 
 ### Qué genera
 
-La ejecución guarda su salida por defecto en `results/new_workflow/simulator/<timestamp>_trajectory_tracking/`:
+La ejecución guarda su salida por defecto en `code_tfg/outputs/mimo/new_workflow/simulator/<timestamp>_trajectory_tracking/`:
 
 - `hip_tracking_telemetry.csv` — telemetría con ángulos, torque proxy y activaciones flex/ext de cada cadera.
 - `hip_tracking_summary.png` — figura resumen con ángulos, torque y activaciones.
@@ -103,7 +105,7 @@ La ejecución guarda su salida por defecto en `results/new_workflow/simulator/<t
 
 ```bash
 python3 examples/visualiza_standup_trajectory_tracking.py \
-  --reference-csv mimoEnv/exo_motor_custom/healthy_hip_reference.csv
+  --reference-csv mimo/scripts/healthy_hip_reference.csv
 ```
 
 ### Ritmo de la trayectoria

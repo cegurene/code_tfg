@@ -1,7 +1,7 @@
 # En config_PPO.yaml
 hydra:
   run:
-    dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/${env.algorithm}/${env.env_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/entrenamiento/${env.algorithm}/${env.env_name}/${now:%Y-%m-%d}/${now:%H-%M-%S}
     
 
 # task and env

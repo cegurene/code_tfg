@@ -30,7 +30,7 @@ torque_raw = kp * (q_ref - q) + ki * integral_error + kd * (qd_ref - qd)
 
 ## 1) Simulation Validation Script
 
-File: `mimoEnv/knee_motor_validation.py`
+File: `mimo/scripts/visualiza_standup_trajectory_tracking.py`
 
 Purpose:
 - Validate knee tracking in simulation.
@@ -41,16 +41,16 @@ Typical commands:
 
 ```bash
 # Default validation
-python mimoEnv/knee_motor_validation.py --steps 5000 --warmup-steps 120
+python3 visualiza_standup_trajectory_tracking.py --reference-csv healthy_hip_reference.csv
 
 # Faster headless run
-python mimoEnv/knee_motor_validation.py --steps 20000 --no-render --verbose-every 1000
+python3 visualiza_standup_trajectory_tracking.py --reference-csv healthy_hip_reference.csv --no-render
 
 # Custom PID and reference components
-python mimoEnv/knee_motor_validation.py \
+python3 visualiza_standup_trajectory_tracking.py \
+  --reference-csv healthy_hip_reference.csv \
   --kp 2.0 --ki 0.2 --kd 0.1 \
-  --virtual-actuators "0.5,1.0,0;0.2,2.0,1.57" \
-  --steps 10000
+Safety behavior in real mode:
 ```
 
 Key flags:
@@ -60,16 +60,13 @@ Key flags:
 - `--virtual-actuators`: reference definition `amp,freq,phase;...`.
 - `--ref-offset`: reference angle offset in rad.
 - `--kp`, `--ki`, `--kd`: PID gains.
-- `--render / --no-render`: interactive visualization on/off.
-- `--verbose-every`: print status every N steps.
-- `--output-csv`: CSV filename inside run folder.
-- `--run-dir`: optional custom run folder.
-
-## 2) Sim2Real Runner: Trajectory-to-Torque with Muscle Model
-
-File: `mimoEnv/knee_motor_sim2real_runner.py` (or `hip_motor_sim2real_runner.py`)
-
-**Primary workflow:** Real motor control uses **`--control-mode muscle`** (default is `pid`, but muscle mode is the main working mode).
+```bash
+python3 hip_motor_torque_replay_runner.py \
+  --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+  --interface ros2 \
+  --motor-id 11 \
+  --apply-torque
+```
 
 Purpose:
 - Run in simulation (`--mode sim`) or real motor via ROS2 (`--mode real`).
@@ -88,53 +85,40 @@ Safety behavior in real mode:
 
 **Safety-first dry run (no torque sent):**
 ```bash
-python mimoEnv/knee_motor_sim2real_runner.py \
-  --mode real \
-  --control-mode muscle \
+python3 hip_motor_torque_replay_runner.py \
+  --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+  --interface ros2 \
   --motor-id 11 \
-  --duration-s 10 \
-  --rate-hz 100 \
-  --save-csv --save-plot \
-  --verbose-every 100
+  --apply-torque
 ```
 
 **Full run with torque enabled and adaptive scaling:**
 ```bash
-python mimoEnv/knee_motor_sim2real_runner.py \
-  --mode real \
-  --control-mode muscle \
+python3 hip_motor_torque_replay_runner.py \
+  --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+  --interface ros2 \
   --motor-id 11 \
-  --duration-s 20 \
-  --rate-hz 100 \
-  --safe-torque-limit 0.5 \
-  --torque-limit-mode scale \
-  --torque-scale-decay-s 0.6 \
-  --torque-scale-softness 1.8 \
   --apply-torque \
-  --save-csv --save-plot --save-paper-plot \
-  --plot-angle-align real_to_des \
-  --plot-angle-align-anchor initial
+  --safe-torque-limit 0.5
 ```
 
 **Asymmetric raw-torque scaling (more authority in extension):**
-```bash
-python mimoEnv/knee_motor_sim2real_runner.py \
-  --mode real \
-  --control-mode muscle \
-  --motor-id 11 \
-  --duration-s 20 \
-  --rate-hz 100 \
-  --torque-output-source raw_scaled \
-  --torque-raw-scale-pos 0.33 \
-  --torque-raw-scale-neg 0.45 \
-  --apply-torque --save-csv --save-plot
+**Auto-generated folder structure** (when `--run-dir` is not provided):
 ```
-
----
-
-### Control Modes
-
-#### **Muscle Mode** (recommended for real hardware)
+code_tfg/outputs/mimo/
+├── new_workflow/
+│   └── simulator/
+│       └── <timestamp>_trajectory_tracking/
+│           ├── hip_tracking_telemetry.csv
+│           ├── hip_tracking_summary.png
+│           └── simulation_summary.txt
+└── runner/
+    └── <timestamp>_id=<motor_id>/
+        ├── telemetry.csv
+        ├── timeseries.png
+        ├── run_config.txt
+        └── simulation_info.txt
+```
 
 Workflow:
 1. Trajectory generates reference angle `q_ref` and velocity `qd_ref`
@@ -158,15 +142,11 @@ Key muscle flags:
 
 Example with custom flexor/extensor definition:
 ```bash
-python mimoEnv/knee_motor_sim2real_runner.py \
-  --mode real \
-  --control-mode muscle \
+python3 hip_motor_torque_replay_runner.py \
+  --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+  --interface ros2 \
   --motor-id 11 \
-  --kp 2.0 --ki 0.2 --kd 0.1 \
-  --flex-muscles "10.0,1.2,0.25,0.8,0.0,0.30;8.0,1.2,0.18,1.4,0.8,0.25" \
-  --ext-muscles "10.0,1.2,0.25,0.8,3.14,0.30;8.0,1.2,0.18,1.4,3.94,0.25" \
-  --duration-s 30 --rate-hz 100 \
-  --apply-torque --save-csv --save-plot
+  --apply-torque
 ```
 
 #### **PID Mode** (direct trajectory tracking)
@@ -174,13 +154,11 @@ python mimoEnv/knee_motor_sim2real_runner.py \
 Simpler alternative: Pure PID without muscle synthesis.
 
 ```bash
-python mimoEnv/knee_motor_sim2real_runner.py \
-  --mode real \
-  --control-mode pid \
+python3 hip_motor_torque_replay_runner.py \
+  --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+  --interface ros2 \
   --motor-id 11 \
-  --kp 1.8 --ki 0.15 --kd 0.08 \
-  --duration-s 20 --rate-hz 100 \
-  --apply-torque --save-csv --save-plot
+  --apply-torque
 ```
 
 ---
@@ -210,16 +188,11 @@ Supported sources:
 
 Example:
 ```bash
-python mimoEnv/knee_motor_sim2real_runner.py \
-  --mode real \
-  --control-mode muscle \
+python3 hip_motor_torque_replay_runner.py \
+  --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+  --interface ros2 \
   --motor-id 11 \
-  --trajectory-csv results/gait_sample.csv \
-  --trajectory-angle-unit deg \
-  --trajectory-period-s 1.063 \
-  --auto-phase-align \
-  --duration-s 30 --rate-hz 100 \
-  --apply-torque --save-csv --save-plot
+  --apply-torque
 ```
 
 ---
@@ -279,15 +252,13 @@ When `--torque-output-source raw_scaled`, the command is `torque_cmd = torque_ra
 - `torque_raw_scale_pos`: applied when `torque_raw ≥ 0` (flexion)
 - `torque_raw_scale_neg`: applied when `torque_raw < 0` (extension)
 
-Example (more authority in extension):
+Example (pyCandle):
 ```bash
-python mimoEnv/knee_motor_sim2real_runner.py \
-  --mode real --control-mode muscle --motor-id 11 \
-  --torque-output-source raw_scaled \
-  --torque-raw-scale-pos 0.33 \
-  --torque-raw-scale-neg 0.50 \
-  --duration-s 20 --rate-hz 100 \
-  --apply-torque --save-csv --save-plot
+python3 hip_motor_torque_replay_runner_pycandle.py \
+  --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+  --interface pycandle \
+  --motor-id 11 \
+  --apply-torque
 ```
 
 ---
@@ -303,19 +274,19 @@ Flags:
 
 Los nuevos runners de replay toman el torque exportado por la simulación y lo aplican al motor real. Por defecto los resultados de estas ejecuciones se almacenan en:
 
-- `results/new_workflow/runner/<timestamp>_id=<motor_id>/` — contiene `telemetry.csv`, `timeseries.png`, `run_config.txt` y `simulation_info.txt`.
+- `code_tfg/outputs/mimo/runner/<timestamp>_id=<motor_id>/` — contiene `telemetry.csv`, `timeseries.png`, `run_config.txt` y `simulation_info.txt`.
 
 Ejemplo (ROS2):
 ```bash
-python3 mimoEnv/exo_motor_custom/hip_motor_torque_replay_runner.py \
-  --source-csv results/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+python3 hip_motor_torque_replay_runner.py \
+  --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
   --interface ros2 --motor-id 308 --apply-torque
 ```
 
 Ejemplo (pyCandle):
 ```bash
-python3 mimoEnv/exo_motor_custom/hip_motor_torque_replay_runner_pycandle.py \
-  --source-csv results/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+python3 hip_motor_torque_replay_runner_pycandle.py \
+  --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
   --interface pycandle --motor-id 308 --apply-torque
 ```
 
@@ -328,16 +299,19 @@ Recuerda que puedes forzar otra carpeta de salida con `--run-dir` y que `--csv-p
 
 **Auto-generated folder structure** (when `--run-dir` is not provided):
 ```
-results/
-├── knee_motor_real/
-│   └── YYYY-MM-DD_HH-MM-SS_id=<motor_id>/
-│       ├── telemetry.csv
-│       ├── timeseries.png
-│       ├── paper_summary.png
-│       └── run_config.txt
-└── knee_motor_validation/
-    └── YYYY-MM-DD_HH-MM-SS/
-        └── telemetry.csv
+code_tfg/outputs/mimo/
+├── new_workflow/
+│   └── simulator/
+│       └── <timestamp>_trajectory_tracking/
+│           ├── hip_tracking_telemetry.csv
+│           ├── hip_tracking_summary.png
+│           └── simulation_summary.txt
+└── runner/
+  └── <timestamp>_id=<motor_id>/
+    ├── telemetry.csv
+    ├── timeseries.png
+    ├── run_config.txt
+    └── simulation_info.txt
 ```
 
 **CSV columns:**
@@ -353,11 +327,9 @@ results/
 
 1. **Dry run (no torque):**
    ```bash
-   python mimoEnv/knee_motor_sim2real_runner.py \
-     --mode real --control-mode muscle --motor-id 11 \
-     --duration-s 5 --rate-hz 100 \
-     --save-csv --save-plot \
-     --verbose-every 50
+   python3 hip_motor_torque_replay_runner.py \
+     --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+     --interface ros2 --motor-id 11
    ```
    ✓ Verify ROS2 topics are live  
    ✓ Check reference trajectory makes sense  
@@ -365,26 +337,20 @@ results/
 
 2. **Light torque run (adaptive scaling):**
    ```bash
-   python mimoEnv/knee_motor_sim2real_runner.py \
-     --mode real --control-mode muscle --motor-id 11 \
-     --duration-s 10 --rate-hz 100 \
-     --safe-torque-limit 0.2 \
-     --torque-limit-mode scale \
-     --apply-torque --save-csv --save-plot
+   python3 hip_motor_torque_replay_runner.py \
+     --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+     --interface ros2 --motor-id 11 \
+     --safe-torque-limit 0.2 --apply-torque
    ```
    ✓ Test motor response with limited authority  
    ✓ Verify muscle activations look reasonable  
 
 3. **Full run:**
    ```bash
-   python mimoEnv/knee_motor_sim2real_runner.py \
-     --mode real --control-mode muscle --motor-id 11 \
-     --duration-s 30 --rate-hz 100 \
-     --safe-torque-limit 0.5 \
-     --torque-limit-mode scale \
-     --torque-scale-decay-s 0.6 \
-     --torque-scale-softness 1.8 \
-     --apply-torque --save-csv --save-plot --save-paper-plot
+   python3 hip_motor_torque_replay_runner.py \
+     --source-csv code_tfg/outputs/mimo/new_workflow/simulator/<run_tag>/hip_tracking_telemetry.csv \
+     --interface ros2 --motor-id 11 \
+     --safe-torque-limit 0.5 --apply-torque --save-csv --save-plot
    ```
 
 ### Common Issues
@@ -410,7 +376,7 @@ results/
 
 ## File Locations
 
-- **Knee motor scripts:** `mimoEnv/exo_motor_custom/knee_motor_*.py`
-- **Hip motor scripts:** `mimoEnv/exo_motor_custom/hip_motor_*.py`
-- **Output folder:** `results/` (timestamped per run)
-- **This README:** `mimoEnv/exo_motor_custom/README.md`
+- **Trajectory tracking script:** `mimo/scripts/visualiza_standup_trajectory_tracking.py`
+- **Hip motor replay scripts:** `mimo/scripts/hip_motor_torque_replay_runner.py` and `mimo/scripts/hip_motor_torque_replay_runner_pycandle.py`
+- **Output folder:** `code_tfg/outputs/mimo/` (timestamped per run)
+- **This README:** `mimo/scripts/README_real.md`

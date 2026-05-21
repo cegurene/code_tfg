@@ -650,7 +650,8 @@ def main() -> int:
     reference.period_s = float(args.trajectory_period_s)
 
     run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_trajectory_tracking"
-    run_dir = args.run_dir.strip() if args.run_dir else os.path.join("results", "new_workflow", "simulator", run_tag)
+    repo_root = Path(__file__).resolve().parents[2]
+    run_dir = args.run_dir.strip() if args.run_dir else str(repo_root / "outputs" / "mimo" / "new_workflow" / "simulator" / run_tag)
     os.makedirs(run_dir, exist_ok=True)
 
     csv_path = args.csv_path.strip() if args.csv_path else os.path.join(run_dir, "hip_tracking_telemetry.csv")

@@ -1529,7 +1529,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--csv-path",
         default="",
-        help="Output CSV path for real mode. If empty, auto-generates in results/",
+        help="Output CSV path for real mode. If empty, auto-generates in outputs/",
     )
     p.add_argument(
         "--save-plot",
@@ -1540,7 +1540,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--plot-path",
         default="",
-        help="Output plot path for real mode. If empty, auto-generates in results/",
+        help="Output plot path for real mode. If empty, auto-generates in outputs/",
     )
     p.add_argument(
         "--show-plot",
@@ -1557,12 +1557,12 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--paper-plot-path",
         default="",
-        help="Output paper-style plot path. If empty, auto-generates in results/",
+        help="Output paper-style plot path. If empty, auto-generates in outputs/",
     )
     p.add_argument(
         "--run-dir",
         default="",
-        help="Per-run output folder. If empty, uses results/hip_motor_real/<timestamp>/",
+        help="Per-run output folder. If empty, uses outputs/mimo/old_workflow/hip_motor_real/<timestamp>/",
     )
     p.add_argument(
         "--plot-angle-align",
@@ -1792,7 +1792,8 @@ def _run_real_mode(args, gains: PIDGains, virtual_actuators: Sequence[VirtualAct
 
     run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     default_run_name = f"{run_tag}_id={args.motor_id}"
-    run_dir = args.run_dir.strip() if args.run_dir else os.path.join("results", "hip_motor_real", default_run_name)
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    run_dir = args.run_dir.strip() if args.run_dir else os.path.join(repo_root, "outputs", "mimo", "old_workflow", "hip_motor_real", default_run_name)
     os.makedirs(run_dir, exist_ok=True)
 
     csv_path = args.csv_path.strip() if args.csv_path else os.path.join(run_dir, "telemetry.csv")
