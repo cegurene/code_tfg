@@ -748,7 +748,9 @@ def main() -> int:
     int_err_right = 0.0
     int_err_left = 0.0
 
-    action = np.zeros(env.action_space.shape, dtype=np.float32)
+    action = np.zeros(env.action_space.shape, dtype=np.float32) # Creates a vector of zeros with the same shape as the action space
+    # If action vector length is even, this is half the size
+    # This allows supporting both full muscle activations and single flexor/extensor difference control in the same code.
     half_action = action.shape[0] // 2 if action.shape[0] % 2 == 0 else None
 
     for step in range(total_steps):
@@ -801,6 +803,10 @@ def main() -> int:
         left_ext_cmd = max(0.0, -act_l_norm)
 
         action[:] = 0.0
+        # If True: use separate channels per muscle. The action vector is
+        # interpreted as two blocks (first half = flexor activations, second
+        # half = extensor activations) and we write flex/ext into the
+        # corresponding indices (index + half_action for extensors).
         if half_action is not None:
             if right_act_idx < half_action:
                 action[right_act_idx] = float(

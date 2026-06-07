@@ -1,6 +1,0 @@
-{
-  "package_name": "rl_interfaces",
-  "non_idl_tuples": [
-    "/home/carlos/Escritorio/TFG/code_tfg/inferencia/src/rl_interfaces:msg/MotionCommand.msg"
-  ]
-}

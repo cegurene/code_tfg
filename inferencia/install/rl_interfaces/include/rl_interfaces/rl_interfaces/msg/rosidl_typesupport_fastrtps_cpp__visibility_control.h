@@ -1,1 +1,0 @@
-/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_interfaces/rosidl_typesupport_fastrtps_cpp/rl_interfaces/msg/rosidl_typesupport_fastrtps_cpp__visibility_control.h

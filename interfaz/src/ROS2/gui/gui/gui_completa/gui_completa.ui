@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1245</width>
-    <height>965</height>
+    <width>1332</width>
+    <height>960</height>
    </rect>
   </property>
   <property name="font">
@@ -30,16 +30,16 @@
      <rect>
       <x>660</x>
       <y>60</y>
-      <width>571</width>
+      <width>661</width>
       <height>461</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>5</number>
     </property>
     <widget class="QWidget" name="tab_4">
      <attribute name="title">
-      <string>Impedance</string>
+      <string>Impedancia</string>
      </attribute>
      <widget class="QWidget" name="layoutWidget_11">
       <property name="geometry">
@@ -492,7 +492,7 @@
     </widget>
     <widget class="QWidget" name="motores">
      <attribute name="title">
-      <string> Manual (position/speed)</string>
+      <string> Manual (posiciónn/velocidad)</string>
      </attribute>
      <widget class="QPushButton" name="cadera_izq_send_manual">
       <property name="geometry">
@@ -621,8 +621,8 @@
      <widget class="QLabel" name="label_22">
       <property name="geometry">
        <rect>
-        <x>90</x>
-        <y>10</y>
+        <x>100</x>
+        <y>20</y>
         <width>55</width>
         <height>16</height>
        </rect>
@@ -784,7 +784,7 @@
        <rect>
         <x>10</x>
         <y>30</y>
-        <width>222</width>
+        <width>231</width>
         <height>381</height>
        </rect>
       </property>
@@ -800,14 +800,14 @@
           </font>
          </property>
          <property name="text">
-          <string>Simulation</string>
+          <string>Simulador</string>
          </property>
         </widget>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_11">
          <property name="text">
-          <string>Cycles</string>
+          <string>Ciclos</string>
          </property>
         </widget>
        </item>
@@ -982,9 +982,9 @@
         </widget>
        </item>
        <item row="12" column="0" colspan="2">
-        <widget class="QPushButton" name="launchSimButton">
+        <widget class="QPushButton" name="buttonLaunchSimMimo">
          <property name="text">
-          <string>Launch Simulation</string>
+          <string>lanzar simulador</string>
          </property>
         </widget>
        </item>
@@ -996,7 +996,7 @@
           </font>
          </property>
          <property name="text">
-          <string>(For complete customization,</string>
+          <string>Para personalización completa,</string>
          </property>
         </widget>
        </item>
@@ -1008,7 +1008,7 @@
           </font>
          </property>
          <property name="text">
-          <string> lauch the simulator)</string>
+          <string>lanzar el script de simulación</string>
          </property>
         </widget>
        </item>
@@ -1017,9 +1017,9 @@
      <widget class="QWidget" name="formLayoutWidget_4">
       <property name="geometry">
        <rect>
-        <x>310</x>
+        <x>260</x>
         <y>30</y>
-        <width>201</width>
+        <width>381</width>
         <height>381</height>
        </rect>
       </property>
@@ -1032,7 +1032,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Real Motor</string>
+          <string>Motor real</string>
          </property>
         </widget>
        </item>
@@ -1044,30 +1044,241 @@
           </font>
          </property>
          <property name="text">
-          <string>(For complete customization,</string>
+          <string>para una personalización
+completa, lanzar el script
+de motor real</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_38">
+         <property name="text">
+          <string>CSV origen</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="carpeta_csv_origen_mimo_real"/>
+       </item>
+       <item row="8" column="0" colspan="2">
+        <widget class="QPushButton" name="buttonRealSimMimo">
+         <property name="text">
+          <string>Lanzar motor real</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="nombre_csv_origen_mimo_real"/>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_35">
+         <property name="text">
+          <string>Motor id</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QSpinBox" name="selector_motor_id_mimo_real"/>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="label_39">
+         <property name="text">
+          <string>Aplicar Torque?</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QRadioButton" name="selector_apply_torque_true">
+         <property name="text">
+          <string>Si</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QRadioButton" name="selector_apply_torque_false">
+         <property name="text">
+          <string>No</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0">
-        <widget class="QLabel" name="label_35">
-         <property name="font">
-          <font>
-           <pointsize>8</pointsize>
-          </font>
-         </property>
+        <widget class="QLabel" name="label_40">
          <property name="text">
-          <string> lauch the simulator)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="2">
-        <widget class="QPushButton" name="launchRealMotorButton">
-         <property name="text">
-          <string>Launch Real Motor</string>
+          <string>Se usará pycandle
+para la conexión.
+Para usar ROS2 lanzar
+script de motor real</string>
          </property>
         </widget>
        </item>
       </layout>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="entrenamiento_page">
+     <attribute name="title">
+      <string>Entrenamiento</string>
+     </attribute>
+     <widget class="QWidget" name="formLayoutWidget_5">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>40</y>
+        <width>541</width>
+        <height>141</height>
+       </rect>
+      </property>
+      <layout class="QFormLayout" name="formLayout_8">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_36">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Continuar desde:
+(optional)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QPushButton" name="button_checkpoint_entrenamiento">
+         <property name="text">
+          <string>Seleccionar checkpoint</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="carpeta_chechpoint_entrenamiento"/>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="nombre_checkpoint_entrenamiento"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QPushButton" name="button_empezar_entrenamiento">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>190</y>
+        <width>141</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Empezar</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="texto_salida_entrenamiento">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>260</y>
+        <width>541</width>
+        <height>141</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Salida</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="inferencia_page">
+     <attribute name="title">
+      <string>Inferencia</string>
+     </attribute>
+     <widget class="QWidget" name="formLayoutWidget_6">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>40</y>
+        <width>541</width>
+        <height>141</height>
+       </rect>
+      </property>
+      <layout class="QFormLayout" name="formLayout_10">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_37">
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Seleccionar agente:
+(checkpoint)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QPushButton" name="button_checkpoint_inferencia">
+         <property name="text">
+          <string>Seleccionar checkpoint</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="carpeta_chechpoint_inferencia"/>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="nombre_checkpoint_inferencia"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QRadioButton" name="radioButton">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>190</y>
+        <width>111</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Simulador</string>
+      </property>
+     </widget>
+     <widget class="QRadioButton" name="radioButton_2">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>190</y>
+        <width>111</width>
+        <height>25</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Real</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="button_empezar_inferencia">
+      <property name="geometry">
+       <rect>
+        <x>330</x>
+        <y>190</y>
+        <width>201</width>
+        <height>27</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Empezar</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="texto_salida_inferencia">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>250</y>
+        <width>541</width>
+        <height>151</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Salida</string>
+      </property>
      </widget>
     </widget>
    </widget>
@@ -1081,7 +1292,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Enable Left Motor</string>
+     <string>Habilitar Motor Izq</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="enable_right_motor">
@@ -1094,7 +1305,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Enable Right Motor</string>
+     <string>Habilitar Motor Der</string>
     </property>
    </widget>
    <widget class="QGroupBox" name="cadera_izq_control_Qbox">
@@ -1495,12 +1706,12 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>71</width>
+      <width>91</width>
       <height>51</height>
      </rect>
     </property>
     <property name="text">
-     <string>Add motors</string>
+     <string>Añadir motores</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_21">
@@ -1511,7 +1722,7 @@
      <rect>
       <x>690</x>
       <y>560</y>
-      <width>61</width>
+      <width>81</width>
       <height>31</height>
      </rect>
     </property>
@@ -1521,7 +1732,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Left hip</string>
+     <string>Cadera izq</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_27">
@@ -1530,9 +1741,9 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>840</x>
+      <x>830</x>
       <y>560</y>
-      <width>71</width>
+      <width>81</width>
       <height>31</height>
      </rect>
     </property>
@@ -1542,7 +1753,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Right hip</string>
+     <string>Cadera der</string>
     </property>
    </widget>
    <widget class="QWidget" name="widget" native="true">
@@ -1714,7 +1925,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1245</width>
+     <width>1332</width>
      <height>21</height>
     </rect>
    </property>

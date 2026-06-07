@@ -1,7 +1,0 @@
-{
-  "package_name": "rl_interfaces",
-  "output_dir": "/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_interfaces/rosidl_generator_type_description/rl_interfaces",
-  "idl_tuples": [
-    "/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_interfaces/rosidl_adapter/rl_interfaces:msg/MotionCommand.idl"
-  ]
-}

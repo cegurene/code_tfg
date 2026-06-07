@@ -1,1 +1,0 @@
-/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_interfaces/rosidl_generator_cpp/rl_interfaces/msg/detail/motion_command__struct.hpp

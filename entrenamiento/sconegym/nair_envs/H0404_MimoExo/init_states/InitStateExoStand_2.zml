@@ -1,0 +1,32 @@
+values {
+	pelvis_tilt = -0.492183
+	pelvis_tx = 0
+	pelvis_ty = 0.62
+	hip_flexion_r = 1.8326
+	knee_angle_r = -1.74533
+	ankle_angle_r = 0.296706
+	hip_flexion_l = 1.8326
+	knee_angle_l = -1.74533
+	ankle_angle_l = 0.296706
+	upperexo_hinge = 0
+	upperexo_slide = 0
+	lowerexo_slide = 0.1
+	exo_rotation = -1.57
+	lowerexo_hinge = 0
+}
+velocities {
+	pelvis_tilt = 0
+	pelvis_tx = 0
+	pelvis_ty = 0
+	hip_flexion_r = 0
+	knee_angle_r = 0
+	ankle_angle_r = 0
+	hip_flexion_l = 0
+	knee_angle_l = 0
+	ankle_angle_l = 0
+	upperexo_hinge = 0
+	upperexo_slide = 0
+	lowerexo_slide = 0
+	exo_rotation = 0
+	lowerexo_hinge = 0
+}

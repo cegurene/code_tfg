@@ -197,5 +197,3 @@ python3 mimo/scripts/visualiza_standup_trajectory_tracking.py \
 
 La documentación detallada de este flujo se mantiene aquí, en `mimo/scripts/README.md`, para no mezclarla con la introducción general del proyecto.
 
-Contacto
-- Si quieres que expanda el README con ejemplos de CSV concretos, o que añada opciones CLI, dime qué flags prefieres y lo incorporo.

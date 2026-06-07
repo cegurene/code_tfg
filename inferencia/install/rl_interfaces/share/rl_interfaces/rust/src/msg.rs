@@ -1,1 +1,0 @@
-/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_interfaces/rosidl_generator_rs/rl_interfaces/rust/src/msg.rs

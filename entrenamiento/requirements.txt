@@ -1,0 +1,5 @@
+scikit_learn
+gym==0.26
+gymnasium==0.29.1
+matplotlib
+

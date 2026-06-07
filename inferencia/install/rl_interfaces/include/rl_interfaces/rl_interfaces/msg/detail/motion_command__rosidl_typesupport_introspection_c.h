@@ -1,1 +1,0 @@
-/home/carlos/Escritorio/TFG/code_tfg/inferencia/build/rl_interfaces/rosidl_typesupport_introspection_c/rl_interfaces/msg/detail/motion_command__rosidl_typesupport_introspection_c.h
