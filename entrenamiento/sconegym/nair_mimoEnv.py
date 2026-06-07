@@ -17,7 +17,7 @@ import sconepy # type: ignore
 import collections
 
 
-
+"""
 DEFAULT_RW_DICT = {
     "position_tracking": 1.0,
     "velocity_tracking": 0.2,
@@ -25,6 +25,72 @@ DEFAULT_RW_DICT = {
     "torque_smoothness": 0.01,
     "muscle_activation_cost": 0.05,
 }
+"""
+"""
+DEFAULT_RW_DICT = {
+    "position_tracking": 1.0,
+    "velocity_tracking": 0.2,
+    "torque_cost": 0.02,
+    "torque_smoothness": 0.02,
+    "muscle_activation_cost": 0.2,
+}
+"""
+"""
+DEFAULT_RW_DICT = {
+    "position_tracking": 0.8,
+    "velocity_tracking": 0.2,
+    "torque_cost": 0.02,
+    "torque_smoothness": 0.02,
+    "muscle_activation_cost": 0.4,
+}
+"""
+"""
+DEFAULT_RW_DICT = {
+    "position_tracking": 0.7,
+    "velocity_tracking": 0.2,
+    "torque_cost": 0.02,
+    "torque_smoothness": 0.02,
+    "muscle_activation_cost": 1,
+}
+"""
+"""
+DEFAULT_RW_DICT = {
+    "position_tracking": 0.7,
+    "velocity_tracking": 0.2,
+    "torque_cost": 0.02,
+    "torque_smoothness": 0.02,
+    "muscle_activation_cost": 1,
+}
+"""
+"""
+DEFAULT_RW_DICT = {
+    "position_tracking": 1,
+    "velocity_tracking": 0.2,
+    "torque_cost": 0.01,
+    "torque_smoothness": 0.01,
+    "muscle_activation_cost": 0.15,
+}
+"""
+"""
+DEFAULT_RW_DICT = {
+    "position_tracking": 1,
+    "velocity_tracking": 0.2,
+    "torque_cost": 0.01,
+    "torque_smoothness": 0.01,
+    "muscle_activation_cost": 0.5,
+}
+"""
+
+DEFAULT_RW_DICT = {
+    "position_tracking": 1,
+    "velocity_tracking": 0.2,
+    "torque_cost": 0.01,
+    "torque_smoothness": 0.01,
+    "muscle_activation_cost": 0.8,
+}
+
+
+
 
 class MimoGym(NairSconeGymEnv):
     def __init__(self, 
@@ -492,7 +558,9 @@ class MimoGym(NairSconeGymEnv):
     
     def _muscle_activation_cost(self):
         activations = self.model.muscle_activation_array()
-        return float(-np.mean(np.square(activations)))
+        normalized = activations / 0.3
+        #return float(-np.mean(np.square(activations)))
+        return float(-np.mean(np.abs(normalized)))
 
     def _number_muscle_cost(self):
         """
