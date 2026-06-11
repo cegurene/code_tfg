@@ -80,7 +80,7 @@ DEFAULT_RW_DICT = {
     "muscle_activation_cost": 0.5,
 }
 """
-
+"""
 DEFAULT_RW_DICT = {
     "position_tracking": 1,
     "velocity_tracking": 0.2,
@@ -88,7 +88,15 @@ DEFAULT_RW_DICT = {
     "torque_smoothness": 0.01,
     "muscle_activation_cost": 0.8,
 }
+"""
 
+DEFAULT_RW_DICT = {
+    "position_tracking": 0.75,
+    "velocity_tracking": 0.15,
+    "torque_cost": 0.01,
+    "torque_smoothness": 0.4,
+    "muscle_activation_cost": 0.7,
+}
 
 
 
@@ -438,7 +446,7 @@ class MimoGym(NairSconeGymEnv):
         joint_velocities = self.model.dof_velocity_array()
         #print("joint_velocities", joint_velocities)
         # Get an array of current muscle activations
-        muscle_activations = self.model.muscle_activation_array()
+        #muscle_activations = self.model.muscle_activation_array()
         #print("muscle_activations", muscle_activations)
         # glut_max_r, iliopsoas_r, glut_max_l, iliopsoas_l
         for i in range(len(self.model.muscles())):
@@ -501,7 +509,7 @@ class MimoGym(NairSconeGymEnv):
                     dtype=np.float64,
                 ),
                 exo_obs,
-                muscle_activations,
+                #muscle_activations,
                 last_motor_action,
             ],
             dtype=np.float64,

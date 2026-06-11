@@ -461,13 +461,13 @@ class NairSconeGymEnv(BasicSconeGymEnv):
         if self.exo_dofs == 0:
             return self.model.dof_position_array()
         else:
-            return self.model.dof_position_array()[:-self.exo_dofs]
+            return [self.model.dof_position_array()[1], self.model.dof_position_array()[3]]
         
     def get_ms_dof_vels(self):
         if self.exo_dofs == 0:
             return self.model.dof_velocity_array()
         else:
-            return self.model.dof_velocity_array()[:-self.exo_dofs]
+            return [self.model.dof_velocity_array()[1], self.model.dof_velocity_array()[3]]
     
 from sklearn.decomposition import PCA, FastICA, NMF
 from sklearn.preprocessing import MinMaxScaler    

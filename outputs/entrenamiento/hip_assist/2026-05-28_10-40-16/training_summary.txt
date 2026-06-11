@@ -1,5 +1,0 @@
-run_dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/entrenamiento/hip_assist/2026-05-28_10-40-16
-run_config: /home/carlos/Escritorio/TFG/code_tfg/outputs/entrenamiento/hip_assist/2026-05-28_10-40-16/run_config.txt
-train_log: /home/carlos/Escritorio/TFG/code_tfg/outputs/entrenamiento/hip_assist/2026-05-28_10-40-16/training_log.csv
-best_eval: -1942.399442002239
-checkpoint_dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/entrenamiento/hip_assist/2026-05-28_10-40-16/checkpoints
