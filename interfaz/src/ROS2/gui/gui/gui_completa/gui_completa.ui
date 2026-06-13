@@ -35,7 +35,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>5</number>
+     <number>4</number>
     </property>
     <widget class="QWidget" name="tab_4">
      <attribute name="title">
@@ -886,7 +886,7 @@
           <double>0.100000000000000</double>
          </property>
          <property name="value">
-          <double>1.800000000000000</double>
+          <double>0.900000000000000</double>
          </property>
         </widget>
        </item>
@@ -899,7 +899,7 @@
           <double>0.010000000000000</double>
          </property>
          <property name="value">
-          <double>0.150000000000000</double>
+          <double>0.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -912,7 +912,7 @@
           <double>0.010000000000000</double>
          </property>
          <property name="value">
-          <double>0.080000000000000</double>
+          <double>0.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -1044,7 +1044,7 @@
           </font>
          </property>
          <property name="text">
-          <string>para una personalización
+          <string>Para una personalización
 completa, lanzar el script
 de motor real</string>
          </property>
@@ -1114,6 +1114,13 @@ script de motor real</string>
          </property>
         </widget>
        </item>
+       <item row="4" column="0">
+        <widget class="QPushButton" name="carpeta_mimo_real_boton">
+         <property name="text">
+          <string>Carpeta</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>
@@ -1126,45 +1133,60 @@ script de motor real</string>
        <rect>
         <x>60</x>
         <y>40</y>
-        <width>541</width>
-        <height>141</height>
+        <width>291</width>
+        <height>111</height>
        </rect>
       </property>
       <layout class="QFormLayout" name="formLayout_8">
        <item row="0" column="0">
         <widget class="QLabel" name="label_36">
-         <property name="font">
-          <font>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
          <property name="text">
-          <string>Continuar desde:
-(optional)</string>
+          <string>Episodios totales</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_37">
+         <property name="text">
+          <string>Frecuencia de
+checkpoints</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QPushButton" name="button_checkpoint_entrenamiento">
-         <property name="text">
-          <string>Seleccionar checkpoint</string>
+        <widget class="QSpinBox" name="episodios_training">
+         <property name="maximum">
+          <number>100000</number>
+         </property>
+         <property name="singleStep">
+          <number>10000</number>
+         </property>
+         <property name="value">
+          <number>10000</number>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="carpeta_chechpoint_entrenamiento"/>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="nombre_checkpoint_entrenamiento"/>
+        <widget class="QSpinBox" name="checkpoints_freq_training">
+         <property name="maximum">
+          <number>25000</number>
+         </property>
+         <property name="singleStep">
+          <number>5000</number>
+         </property>
+         <property name="value">
+          <number>5000</number>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
      <widget class="QPushButton" name="button_empezar_entrenamiento">
       <property name="geometry">
        <rect>
-        <x>60</x>
-        <y>190</y>
-        <width>141</width>
+        <x>380</x>
+        <y>110</y>
+        <width>221</width>
         <height>41</height>
        </rect>
       </property>
@@ -1172,112 +1194,29 @@ script de motor real</string>
        <string>Empezar</string>
       </property>
      </widget>
-     <widget class="QLabel" name="texto_salida_entrenamiento">
+     <widget class="QLabel" name="label_41">
       <property name="geometry">
        <rect>
-        <x>60</x>
-        <y>260</y>
-        <width>541</width>
-        <height>141</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Salida</string>
-      </property>
-     </widget>
-    </widget>
-    <widget class="QWidget" name="inferencia_page">
-     <attribute name="title">
-      <string>Inferencia</string>
-     </attribute>
-     <widget class="QWidget" name="formLayoutWidget_6">
-      <property name="geometry">
-       <rect>
-        <x>60</x>
+        <x>370</x>
         <y>40</y>
-        <width>541</width>
-        <height>141</height>
+        <width>271</width>
+        <height>51</height>
        </rect>
       </property>
-      <layout class="QFormLayout" name="formLayout_10">
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_37">
-         <property name="font">
-          <font>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Seleccionar agente:
-(checkpoint)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QPushButton" name="button_checkpoint_inferencia">
-         <property name="text">
-          <string>Seleccionar checkpoint</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="carpeta_chechpoint_inferencia"/>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="nombre_checkpoint_inferencia"/>
-       </item>
-      </layout>
+      <property name="text">
+       <string>Para cambiar el diccionario de recompensas,
+modificar la variable &quot;DEFAULT_RW_DICT&quot;
+del script &quot;nair_mimoEnv.py&quot;</string>
+      </property>
      </widget>
-     <widget class="QRadioButton" name="radioButton">
+     <widget class="QPlainTextEdit" name="texto_salida_entrenamiento">
       <property name="geometry">
        <rect>
         <x>60</x>
-        <y>190</y>
-        <width>111</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Simulador</string>
-      </property>
-     </widget>
-     <widget class="QRadioButton" name="radioButton_2">
-      <property name="geometry">
-       <rect>
-        <x>200</x>
-        <y>190</y>
-        <width>111</width>
-        <height>25</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Real</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="button_empezar_inferencia">
-      <property name="geometry">
-       <rect>
-        <x>330</x>
-        <y>190</y>
-        <width>201</width>
-        <height>27</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Empezar</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="texto_salida_inferencia">
-      <property name="geometry">
-       <rect>
-        <x>60</x>
-        <y>250</y>
+        <y>170</y>
         <width>541</width>
-        <height>151</height>
+        <height>231</height>
        </rect>
-      </property>
-      <property name="text">
-       <string>Salida</string>
       </property>
      </widget>
     </widget>

@@ -205,8 +205,8 @@ def _collect_row(env_unwrapped, timestep: int, episode: int, info: dict) -> dict
         "motor_torque_l": exo_torque(3),
         "motor_torque_r": exo_torque(1),
         # Salida PID (índices en info["pid_r"])
-        "pid_output_l":   pid_output(1),
-        "pid_output_r":   pid_output(0),
+        "pid_output_l":   info.get("pid_r", None),
+        "pid_output_r":   info.get("pid_l", None),
         # Targets (índices en info["target_pos"] / info["target_vel"])
         "hip_pos_target_l": target_pos(1),
         "hip_pos_target_r": target_pos(0),
@@ -512,6 +512,9 @@ def main():
             print("[WARN] CUDA requested but not available. Falling back to CPU.")
             device = "cpu"
         print(f"[INFO] SAC device: {device}")
+
+        print("Reward keys in the environment:")
+        print(env.unwrapped.rwd_keys)
 
         model = SAC(
             policy="MlpPolicy",

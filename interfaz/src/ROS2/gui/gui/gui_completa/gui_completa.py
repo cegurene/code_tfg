@@ -27,7 +27,7 @@ import time
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.node import Node
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog
-from PyQt6.QtCore import QTimer, QProcess
+from PyQt6.QtCore import QTimer, QProcess, QProcessEnvironment
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import os
 from datetime import datetime
@@ -50,6 +50,11 @@ from ..impedance_config_py import ImpedanceConfig, find_config_file
 from ..mplGraphTV import TorqueVelocityGraph
 
 from .gui_completa_data import Ui_MainWindow  # Qt Designer generated class for la nueva UI
+
+from pathlib import Path
+
+import re
+from PyQt6.QtGui import QTextCursor
 
 # CAN IDs for motors (updated to match actual hardware)
 left_hip_can_id = 11
@@ -190,6 +195,15 @@ class MiVentana(QMainWindow):
         self.ui.save_play_button.pressed.connect(self.start_recording)
         self.ui.save_stop_button.pressed.connect(self.stop_recording)
         self.ui.add_motors_btn.pressed.connect(self.add_motors)
+
+        # Connect MIMo
+        self.ui.buttonLaunchSimMimo.pressed.connect(self.launch_sim_mimo)
+        self.ui.buttonRealSimMimo.pressed.connect(self.launch_real_mimo)
+        self.ui.carpeta_mimo_real_boton.pressed.connect(self.select_folder_mimo_real)
+
+        # Connect training
+        self.ui.button_empezar_entrenamiento.pressed.connect(self.launch_training)
+        self.ui.texto_salida_entrenamiento.setReadOnly(True)
         
         # Connect sinusoidal trajectory radio buttons
         self.ui.cadera_setpoint_senoidal_btn.toggled.connect(self.start_sinusoidal_trajectory_left)
@@ -2141,6 +2155,206 @@ class MiVentana(QMainWindow):
             
             # Use the impedance position reference function
             self.send_impedance_position_reference(setpoint_left, setpoint_right)
+
+    def launch_sim_mimo(self):
+        ciclos = self.ui.cyclesValueBox.value()
+        kp = self.ui.kpValueBox.value()
+        ki = self.ui.kiValueBox.value()
+        kd = self.ui.kdValueBox.value()
+        mass_scale = self.ui.massValueBox.value()
+        joint_stiffness = self.ui.jointStiffnessValueBox.value()
+        joint_damping = self.ui.jointDampingValueBox.value()
+        joint_frictionloss = self.ui.jointFrictionlossValueBox.value()
+        joint_armature = self.ui.jointArmatureValueBox.value()
+        
+        self.mimo_sim_process = QProcess(self)
+        conda_python = "/home/carlos/miniconda3/envs/mimo/bin/python"
+        script_path = (
+            Path(__file__).resolve().parent / ".." / ".." / ".." / ".." / ".." / ".." / ".." / ".." / "mimo" / "scripts" / "visualiza_standup_trajectory_tracking.py"
+        ).resolve()
+        
+        print(f"Launching MIMO simulation with script: {script_path}")
+        
+        self.mimo_sim_process.errorOccurred.connect(self.handle_mimo_error)
+        self.mimo_sim_process.finished.connect(self.handle_mimo_finished)
+        
+        self.mimo_sim_process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
+        self.mimo_sim_process.readyReadStandardOutput.connect(self.handle_mimo_output)
+        
+        script_dir = script_path.parent
+        self.mimo_sim_process.setWorkingDirectory(str(script_dir))
+        
+        self.mimo_sim_process.start(
+            conda_python,
+            [
+                str(script_path),
+                "--cycles", str(ciclos),
+                "--kp", str(kp),
+                "--ki", str(ki),
+                "--kd", str(kd),
+                "--mass-scale", str(mass_scale),
+                "--joint-stiffness-scale", str(joint_stiffness),
+                "--joint-damping-scale", str(joint_damping),
+                "--joint-frictionloss-scale", str(joint_frictionloss),
+                "--joint-armature-scale", str(joint_armature)
+            ]
+        )
+        
+        if not self.mimo_sim_process.waitForStarted():
+            print("ERROR: No se pudo iniciar el proceso")
+            print(f"Error: {self.mimo_sim_process.errorString()}")
+
+    def handle_mimo_error(self, error):
+        print(f"QProcess ERROR: {error}")
+        print(f"Error string: {self.mimo_sim_process.errorString()}")
+
+    def handle_mimo_finished(self):
+        exit_code = self.mimo_sim_process.exitCode()
+        exit_status = self.mimo_sim_process.exitStatus()
+        print(f"MIMO simulation finished. Exit code: {exit_code}, Status: {exit_status}")
+
+    def handle_mimo_output(self):
+        output = self.mimo_sim_process.readAllStandardOutput().data().decode()
+        print(f"MIMO OUTPUT: {output}")
+
+    def launch_real_mimo(self):
+        motor_id = self.ui.selector_motor_id_mimo_real.value()
+        if self.ui.selector_apply_torque_true.isChecked():
+            apply_torque = True
+        else:
+            apply_torque = False
+        
+        path_csv = self.ui.carpeta_csv_origen_mimo_real.text() + self.ui.nombre_csv_origen_mimo_real.text()
+        print(f"Launching real MIMO with motor_id={motor_id}, apply_torque={apply_torque}, path_csv={path_csv}")
+
+        conda_python = "/home/carlos/miniconda3/envs/mimo312/bin/python"
+
+        script_path = (
+            Path(__file__).resolve().parent / ".." / ".." / ".." / ".." / ".." / ".." / ".." / ".." / "mimo" / "scripts" / "hip_motor_torque_replay_runner_pycandle.py"
+        ).resolve()
+
+        self.mimo_real_process = QProcess(self)
+        script_dir = script_path.parent
+        self.mimo_real_process.setWorkingDirectory(str(script_dir))
+
+        self.mimo_real_process.start(
+            conda_python,
+            [
+                str(script_path),
+                "--source-csv", str(path_csv),
+                "--motor-id", str(motor_id),
+                "--apply-torque", str(apply_torque),
+                "--source-hip right",
+                "--interface pycandle"
+            ]
+        )
+        
+        if not self.mimo_real_process.waitForStarted():
+            print("ERROR: No se pudo iniciar el proceso")
+            print(f"Error: {self.mimo_real_process.errorString()}")
+
+    def select_folder_mimo_real(self):
+        folder_path = QFileDialog.getExistingDirectory(self, "Select folder", "")
+        if folder_path:
+            self.ui.carpeta_csv_origen_mimo_real.setText(folder_path)
+
+    def launch_training(self):
+        timesteps = self.ui.episodios_training.value()
+        checkpoints_freq = self.ui.checkpoints_freq_training.value()
+
+        conda_python = "/home/carlos/miniconda3/envs/scone/bin/python"
+
+        script_path = (
+            Path(__file__).resolve().parent / ".." / ".." / ".." / ".." / ".." / ".." / ".." / ".." / "entrenamiento" / "training.py"
+        ).resolve()
+
+        self.training_process = QProcess(self)
+        script_dir = script_path.parent
+        self.training_process.setWorkingDirectory(str(script_dir))
+        
+        # ✅ Configurar variables de entorno para unbuffered output
+        env = QProcessEnvironment.systemEnvironment()
+        env.insert("PYTHONUNBUFFERED", "1")
+        self.training_process.setProcessEnvironment(env)
+        
+        self.training_process.readyReadStandardOutput.connect(self.handle_training_output)
+        self.training_process.readyReadStandardError.connect(self.handle_training_output)
+        self.training_process.finished.connect(self.handle_training_finished)
+
+        self.training_process.start(
+            conda_python,
+            [
+                str(script_path),
+                "--total-timesteps", str(timesteps),
+                "--checkpoint-freq", str(checkpoints_freq),
+                "--save-scone-episodes",
+                "--progress-bar"
+            ]
+        )
+
+    def handle_training_output(self):
+        """Captura y muestra la salida en tiempo real"""
+        output = self.training_process.readAllStandardOutput().data().decode()
+        
+        if not output:
+            return
+        
+        # Limpiar códigos ANSI
+        ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+        clean = ansi_escape.sub('', output)
+        
+        text_edit = self.ui.texto_salida_entrenamiento
+        
+        # Si hay \r (carriage return), actualizar última línea
+        if '\r' in clean:
+            # Obtener la última línea visible
+            cursor = text_edit.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.End)
+            
+            # Ir a inicio de línea
+            cursor.movePosition(QTextCursor.MoveOperation.StartOfLine)
+            cursor.movePosition(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.KeepAnchor)
+            
+            # Obtener texto de última línea
+            last_line_text = cursor.selectedText()
+            
+            # Actualizar con el nuevo progress
+            parts = clean.split('\r')
+            new_progress = parts[-1].strip()
+            
+            cursor.removeSelectedText()
+            cursor.insertText(new_progress)
+            text_edit.setTextCursor(cursor)
+        else:
+            # Agregar como nueva línea
+            if clean.strip():
+                text_edit.appendPlainText(clean.strip())
+        
+        # Auto-scroll
+        scrollbar = text_edit.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+
+    def handle_training_finished(self):
+        """Se ejecuta cuando el proceso termina"""
+        exit_code = self.training_process.exitCode()
+        self.ui.texto_salida_entrenamiento.appendPlainText(f"\n✅ Entrenamiento finalizado (Exit code: {exit_code})")
+
+    def update_last_line(self, new_text):
+        """Actualiza la última línea sin crear una nueva"""
+        text_edit = self.ui.texto_salida_entrenamiento
+        cursor = text_edit.textCursor()
+        
+        # Mover al final del documento
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        
+        # Seleccionar toda la última línea
+        cursor.select(QTextCursor.SelectionType.LineUnderCursor)
+        
+        # Reemplazar con el nuevo texto del progress bar
+        cursor.removeSelectedText()
+        cursor.insertText(new_text)
+        
+        text_edit.setTextCursor(cursor)
 
     # Starts rosbag recording with auto-numbered filename in the chosen folder.
     def start_recording(self):
