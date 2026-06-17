@@ -793,6 +793,7 @@ class MiVentana(QMainWindow):
             # Sincronizar de forma segura nuestros flags booleanos internos con lo que está marcado en la UI
             self._left_motor_enabled = self.ui.enable_motors.isChecked()
             self._right_motor_enabled = self.ui.enable_right_motor.isChecked()
+            self._motors_enabled = self._left_motor_enabled or self._right_motor_enabled
             
             self.master.get_logger().info(f'📊 Flags internos actualizados -> IZQ: {self._left_motor_enabled} | DER: {self._right_motor_enabled}')
             
@@ -1995,40 +1996,49 @@ class MiVentana(QMainWindow):
         if not hasattr(self, '_current_control_mode') or self._current_control_mode != "IMPEDANCE":
             return
             
-        if not hasattr(self, '_motors_added') or not self._motors_added:
+        motors_added = getattr(self, '_motors_added', False)
+        motors_enabled = getattr(self, '_motors_enabled', False)
+
+        if not motors_added or not motors_enabled:
+            self.master.get_logger().info(f'[IMP] Blocked: motors_added={motors_added}, motors_enabled={motors_enabled}')
             return
-        
-        if not hasattr(self, '_motors_enabled') or not self._motors_enabled:
-            return
-        
+
         try:
             setpoint_left = None
             setpoint_right = None
-            
-            # Left
+
+            # Left Hip Logic
             left_manual_enabled = hasattr(self.ui, 'left_hip_manual_enable') and self.ui.left_hip_manual_enable.isChecked()
             left_trajectory_active = getattr(self, '_impedance_trajectory_left_active', False)
+            left_sine_active = getattr(self, '_impedance_sinusoidal_left_active', False)
             left_conflict = self._check_impedance_mode_conflict('left')
-            
-            if left_manual_enabled and left_trajectory_active and not left_conflict:
+
+            if left_manual_enabled and left_trajectory_active and not left_sine_active and not left_conflict:
                 if hasattr(self.ui, 'left_hip_manual_box'):
                     setpoint_left = self.ui.left_hip_manual_box.value()
-                    
-            # Right
+
+            # Right Hip Logic
             right_manual_enabled = hasattr(self.ui, 'right_hip_manual_enable') and self.ui.right_hip_manual_enable.isChecked()
             right_trajectory_active = getattr(self, '_impedance_trajectory_right_active', False)
+            right_sine_active = getattr(self, '_impedance_sinusoidal_right_active', False)
             right_conflict = self._check_impedance_mode_conflict('right')
-            
-            if right_manual_enabled and right_trajectory_active and not right_conflict:
+
+            if right_manual_enabled and right_trajectory_active and not right_sine_active and not right_conflict:
                 if hasattr(self.ui, 'right_hip_manual_box'):
                     setpoint_right = self.ui.right_hip_manual_box.value()
-            
-            # Solo enviamos si al menos uno tiene un comando válido
+
+            # Only publish if at least one side has a new valid manual setpoint
             if setpoint_left is not None or setpoint_right is not None:
+                self.master.get_logger().info(f'[IMP] Sending Manual Refs: L={setpoint_left if setpoint_left is not None else "SKIP"}, R={setpoint_right if setpoint_right is not None else "SKIP"}')
                 self.send_impedance_position_reference(setpoint_left, setpoint_right)
+            else:
+                # Helpful debug to see which flag is blocking the update
+                self.master.get_logger().info(f'[IMP] No command sent. L_man={left_manual_enabled}, L_traj={left_trajectory_active}, L_sine={left_sine_active} | R_man={right_manual_enabled}, R_traj={right_trajectory_active}, R_sine={right_sine_active}')
 
         except Exception as e:
-            self.master.get_logger().error(f'Error sending impedance position reference: {str(e)}')
+            self.master.get_logger().error(f'Error in impedance_position_setpoint: {str(e)}')
+            import traceback
+            self.master.get_logger().error(traceback.format_exc())
 
     # Send position reference commands for impedance control
     def send_impedance_position_reference(self, setpoint_left=None, setpoint_right=None):        
