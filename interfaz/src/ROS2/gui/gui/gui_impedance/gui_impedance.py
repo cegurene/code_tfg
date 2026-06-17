@@ -28,8 +28,8 @@ from ..mplGraphTV import TorqueVelocityGraph
 from .gui_impedance_data import Ui_MainWindow
 
 # CAN IDs for motors (keep same as gui_assistive_exo.py)
-left_hip_can_id = 308
-right_hip_can_id = 11
+left_hip_can_id = 348
+right_hip_can_id = 349
 drives_can_id = [left_hip_can_id]  # drives_can_id = [left_hip_can_id, right_hip_can_id]
 num_motors = len(drives_can_id)
 

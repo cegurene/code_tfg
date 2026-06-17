@@ -75,32 +75,6 @@ _CSV_COLUMNS = [
 ]
 
 
-def _safe_get(env_unwrapped, *attr_paths, default=float("nan")):
-    """
-    Intenta leer una variable del entorno SCONE probando varias rutas de
-    atributo/método en orden.  Devuelve `default` si ninguna funciona.
-
-    Cada elemento de `attr_paths` puede ser:
-      - Un string  →  getattr(env, string)
-      - Una tupla  →  getattr(env, t[0])[t[1]]   (índice en array/dict)
-    """
-    for path in attr_paths:
-        try:
-            if isinstance(path, str):
-                val = getattr(env_unwrapped, path)
-            elif isinstance(path, (list, tuple)) and len(path) == 2:
-                obj = getattr(env_unwrapped, path[0])
-                val = obj[path[1]]
-            else:
-                continue
-            if callable(val):
-                val = val()
-            return float(val)
-        except Exception:
-            continue
-    return default
-
-
 def _collect_row(env_unwrapped, timestep: int, episode: int, info: dict) -> dict:
     """
     Extrae todas las variables biomecánicas del entorno en el paso actual.

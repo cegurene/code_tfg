@@ -57,9 +57,9 @@ import re
 from PyQt6.QtGui import QTextCursor
 
 # CAN IDs for motors (updated to match actual hardware)
-left_hip_can_id = 11
-right_hip_can_id = 12
-drives_can_id = [left_hip_can_id]  # drives_can_id = [left_hip_can_id, right_hip_can_id]
+left_hip_can_id = 348
+right_hip_can_id = 349
+drives_can_id = [left_hip_can_id, right_hip_can_id]  # drives_can_id = [left_hip_can_id, right_hip_can_id]
 num_motors = len(drives_can_id)
 
 # Structure to hold motor data
@@ -160,7 +160,8 @@ class MiVentana(QMainWindow):
         # Impedance control variables
         self._impedance_sinusoidal_left_active = False
         self._impedance_sinusoidal_right_active = False
-        self._impedance_sinusoidal_time = 0.0
+        self._impedance_sinusoidal_time_left = 0.0
+        self._impedance_sinusoidal_time_right = 0.0
         self._impedance_sinusoidal_timer = None
         
         # Impedance trajectory start/stop control (via buttons)
@@ -173,6 +174,7 @@ class MiVentana(QMainWindow):
 
         # ROS2 Subscribers
         self.motor_izq_subscriber = self.master.create_subscription(JointState, 'md80/joint_states', self.motor_izq_callback, qos_profile)
+        self.motor_der_subscriber = self.master.create_subscription(JointState, 'md80/joint_states', self.motor_der_callback, qos_profile)  
 
         # ROS2 Service Clients
         self.addMd80Service = self.master.create_client(AddMd80s, '/candle_ros2_node/add_md80s')
@@ -183,8 +185,10 @@ class MiVentana(QMainWindow):
         # Note: Impedance parameters are now published directly to /md80/impedance_command (no service needed)
 
         # Connect GUI elements to functions
-        self.ui.enable_motors.toggled.connect(self.enable_left_motor)  # Changed to left motor control
-        self.ui.enable_right_motor.toggled.connect(self.enable_right_motor)  # New right motor control
+        #self.ui.enable_motors.toggled.connect(self.enable_left_motor)  # Changed to left motor control
+        #self.ui.enable_right_motor.toggled.connect(self.enable_right_motor)  # New right motor control
+        self.ui.botonHabilitarMotores.clicked.connect(self.enable_selected_motors_button_clicked)
+
         # TEST: Add button for simultaneous enable (temporary)
         # self.ui.some_button.pressed.connect(self.enable_both_motors_test)  # Uncomment when we add button
         self.ui.control_set.pressed.connect(self.set_control)
@@ -286,6 +290,9 @@ class MiVentana(QMainWindow):
 
         # For rosbag recording
         self.rosbag_process = None
+
+        print("GUI initialized and ready.")
+        print("="*60)
 
     # Update GUI with latest sensor/motor data
     def update_plot(self):
@@ -490,6 +497,62 @@ class MiVentana(QMainWindow):
         except Exception as e:
             self.master.get_logger().error(f'Error processing motor data: {str(e)}')
 
+    def motor_der_callback(self, msg):
+        try:
+            # Log the raw message structure for debugging (commented out to reduce spam)
+            # self.master.get_logger().info(f'📊 Received joint_states: pos={len(msg.position)}, vel={len(msg.velocity)}, eff={len(msg.effort)}, names={msg.name}')
+
+            if len(msg.position) >= 2 and len(msg.velocity) >= 2 and len(msg.effort) >= 2:
+                # Store previous positions for change detection
+                #prev_left_pos = getattr(self.motor_cadera_izq_data, 'position', 0.0)
+                prev_right_pos = getattr(self.motor_cadera_der_data, 'position', 0.0)
+                
+                # Left motor (index 0)
+                """self.motor_cadera_izq_data.voltage = msg.effort[0]  # Using effort as voltage for now
+                self.motor_cadera_izq_data.current = msg.effort[0]  # Using effort as current for now
+                self.motor_cadera_izq_data.position = self.rad2deg(msg.position[0])
+                self.motor_cadera_izq_data.velocity = msg.velocity[0]
+                self.motor_cadera_izq_data.torque = msg.effort[0]"""
+                
+                # Right motor (index 1)  
+                self.motor_cadera_der_data.voltage = msg.effort[1]
+                self.motor_cadera_der_data.current = msg.effort[1]
+                self.motor_cadera_der_data.position = self.rad2deg(msg.position[1])
+                self.motor_cadera_der_data.velocity = msg.velocity[1]
+                self.motor_cadera_der_data.torque = msg.effort[1]
+                
+                # Log significant position changes (more than 1 degree)
+                #left_change = abs(self.motor_cadera_izq_data.position - prev_left_pos)
+                right_change = abs(self.motor_cadera_der_data.position - prev_right_pos)
+                
+                if right_change > 1.0:
+                    self.master.get_logger().info(f'🔄 Motor positions: Right={self.motor_cadera_der_data.position:.1f}° (Δ{right_change:.1f}°)')
+                    self.master.get_logger().info(f'🔄 Motor velocities: Right={self.motor_cadera_der_data.velocity:.2f}rad/s')
+                    
+            elif len(msg.position) == 1 and len(msg.velocity) == 1 and len(msg.effort) == 1:
+                # Only one motor detected
+                #self.master.get_logger().warn(f'⚠️ Only one motor detected in joint_states! Name: {msg.name[0] if msg.name else "unknown"}')
+                
+                # Assume it's the left motor for now
+                prev_right_pos = getattr(self.motor_cadera_der_data, 'position', 0.0)
+                self.motor_cadera_der_data.voltage = msg.effort[0]
+                self.motor_cadera_der_data.current = msg.effort[0]
+                self.motor_cadera_der_data.position = self.rad2deg(msg.position[0])
+                self.motor_cadera_der_data.velocity = msg.velocity[0]
+                self.motor_cadera_der_data.torque = msg.effort[0]
+                
+                right_change = abs(self.motor_cadera_der_data.position - prev_right_pos)
+                if right_change > 1.0:
+                    self.master.get_logger().info(f'🔄 Single motor position: {self.motor_cadera_der_data.position:.1f}° (Δ{right_change:.1f}°)')
+                    
+            elif len(msg.position) > 0 or len(msg.velocity) > 0 or len(msg.effort) > 0:
+                # Partial data received
+                if hasattr(self, '_motors_added') and self._motors_added:
+                    self.master.get_logger().warn(f'⚠️ Received partial motor data: pos={len(msg.position)}, vel={len(msg.velocity)}, eff={len(msg.effort)}')
+            # Silently ignore completely empty messages when motors aren't added
+        except Exception as e:
+            self.master.get_logger().error(f'Error processing motor data: {str(e)}')
+
     # Degree/radian conversion
     def deg2rad(self, deg):
         return deg * 2 * math.pi / 360
@@ -532,8 +595,8 @@ class MiVentana(QMainWindow):
                 self.master.get_logger().info(f'📊 Total: {successful_motors}/{len(drives_can_id)} motors detected')
                 
                 # Update button texts to reflect CAN IDs
-                self.ui.enable_motors.setText(f"Enable Left Motor: id=  {left_hip_can_id}")
-                self.ui.enable_right_motor.setText(f"Enable Right Motor: id=  ")
+                self.ui.enable_motors.setText(f"Enable Left Motor: id= {left_hip_can_id}")
+                self.ui.enable_right_motor.setText(f"Enable Right Motor: id= {right_hip_can_id}")
 
                 if any(response.drives_success):
                     self._motors_added = True
@@ -623,36 +686,118 @@ class MiVentana(QMainWindow):
 
     # Apply the current desired motor state by enabling desired motors and disabling others
     def _apply_motor_state(self):
-        self.master.get_logger().info(f'🎯 Applying motor state - Desired: {sorted(self._desired_enabled_motors)}')
+        self.master.get_logger().info(f'🎯 Analyzing motor state changes - Desired: {sorted(self._desired_enabled_motors)}')
         
-        # Track current actual state based on legacy variables
+        # Track current actual state based on variables
         currently_enabled = set()
-        if self._left_motor_enabled:
+        if getattr(self, '_left_motor_enabled', False):
             currently_enabled.add(left_hip_can_id)
-        if self._right_motor_enabled:
+        if getattr(self, '_right_motor_enabled', False):
             currently_enabled.add(right_hip_can_id)
         
-        self.master.get_logger().info(f'🔄 Current state: {sorted(currently_enabled)}, Target state: {sorted(self._desired_enabled_motors)}')
+        self.master.get_logger().info(f'🔄 Current: {sorted(currently_enabled)} -> Target: {sorted(self._desired_enabled_motors)}')
         
-        # Check if we need any state changes
+        # 1. Check if we actually need any state changes
         if currently_enabled == self._desired_enabled_motors:
             self.master.get_logger().info('✅ No motor state changes needed - all motors already in correct state')
             return
+
+        # 2. Calculate differentials (What to enable, what to disable)
+        motors_to_enable = self._desired_enabled_motors - currently_enabled
+        motors_to_disable = currently_enabled - self._desired_enabled_motors
+
+        # 3. Process Disables FIRST (Only to specific motors that were turned off)
+        if motors_to_disable:
+            self.master.get_logger().info(f'🛑 Disabling specific motors: {sorted(list(motors_to_disable))}')
+            disable_request = GenericMd80Msg.Request()
+            disable_request.drive_ids = sorted(list(motors_to_disable))
+            
+            # Al apagar, actualizamos sus flags inmediatamente para reflejar el cambio en la GUI
+            for motor_id in motors_to_disable:
+                if motor_id == left_hip_can_id: self._left_motor_enabled = False
+                if motor_id == right_hip_can_id: self._right_motor_enabled = False
+                
+            self.disableMd80Service.call_async(disable_request)
+            # Damos un pequeño margen para que el bus CAN procese el disable antes de mandar un enable
+            time.sleep(0.02) 
+
+        # 4. Process Enables (Only to specific motors that need to turn on)
+        if motors_to_enable:
+            self.master.get_logger().info(f'⚡ Enabling specific motors: {sorted(list(motors_to_enable))}')
+            enable_request = GenericMd80Msg.Request()
+            enable_request.drive_ids = sorted(list(motors_to_enable))
+            
+            # Llamamos al servicio asíncrono para activar SOLO los nuevos motores
+            enable_future = self.enableMd80Service.call_async(enable_request)
+            enable_future.add_done_callback(lambda f, ids=motors_to_enable: self._handle_specific_enable_done(f, ids))
+    
+    def _handle_specific_enable_done(self, future, motor_ids):
+        try:
+            response = future.result()
+            self.master.get_logger().info(f'✅ ROS 2 Service response received for enabling motors: {sorted(list(motor_ids))}')
+            
+            # Confirmamos la activación en nuestros estados internos individuales
+            for motor_id in motor_ids:
+                if motor_id == left_hip_can_id:
+                    self._left_motor_enabled = True
+                    self.master.get_logger().info("➡ Left motor state marked as ENABLED")
+                if motor_id == right_hip_can_id:
+                    self._right_motor_enabled = True
+                    self.master.get_logger().info("➡ Right motor state marked as ENABLED")
+                    
+        except Exception as e:
+            self.master.get_logger().error(f'❌ Failed to enable motors {sorted(list(motor_ids))}: {str(e)}')
+
+    def enable_selected_motors_button_clicked(self):
+        """Recoge los motores seleccionados en los checkboxes y los habilita simultáneamente"""
         
-        # NEW STRATEGY: Always disable all first, then enable all desired motors
-        # This avoids timing issues with individual enable/disable operations
-        # Only include motors we actually configured
-        all_motor_ids = set(drives_can_id)
+        print(60*"=")
+
+        # Validación de seguridad: verificar si Candle ya conoce los motores
+        if not hasattr(self, '_motors_added') or not self._motors_added:
+            self.master.get_logger().warn('⚠️ No se pueden habilitar: ¡Los motores no han sido añadidos al driver todavía!')
+            return
+
+        # 1. Crear la lista de motores a activar leyendo directamente la interfaz
+        motores_a_activar = []
         
-        # Step 1: Disable ALL motors first to reset state
-        print()
-        self.master.get_logger().info(f'🔄 Resetting state: Disabling all motors')
-        disable_request = GenericMd80Msg.Request()
-        disable_request.drive_ids = sorted(list(all_motor_ids))
-        disable_future = self.disableMd80Service.call_async(disable_request)
-        
-        # Step 2: After disable completes, enable the desired motors
-        disable_future.add_done_callback(lambda f: self._handle_reset_then_enable(f))
+        if self.ui.enable_motors.isChecked():       # Checkbox de la pierna izquierda
+            motores_a_activar.append(left_hip_can_id)
+            
+        if self.ui.enable_right_motor.isChecked():  # Checkbox de la pierna derecha
+            motores_a_activar.append(right_hip_can_id)
+
+        # 2. Validar si el usuario se ha olvidado de marcar algún checkbox
+        if not motores_a_activar:
+            self.master.get_logger().warn('⚠️ Ningún motor seleccionado. Marca al menos un checkbox antes de pulsar el botón.')
+            return
+
+        self.master.get_logger().info(f'🚀 Botón pulsado. Enviando petición unificada para activar IDs: {sorted(motores_a_activar)}')
+
+        # 3. Construir el mensaje de ROS 2 con la lista completa de una sola vez
+        request = GenericMd80Msg.Request()
+        request.drive_ids = sorted(motores_a_activar)
+
+        # 4. Realizar la llamada asíncrona al servicio de Candle
+        future = self.enableMd80Service.call_async(request)
+        future.add_done_callback(self._handle_unified_enable_done)
+
+        print(60*"=")
+
+    def _handle_unified_enable_done(self, future):
+        """Callback que procesa la respuesta del nodo C++ de Candle"""
+        try:
+            response = future.result()
+            self.master.get_logger().info('✅ ¡Respuesta de Candle exitosa! Bucle de tiempo real iniciado para los motores seleccionados.')
+            
+            # Sincronizar de forma segura nuestros flags booleanos internos con lo que está marcado en la UI
+            self._left_motor_enabled = self.ui.enable_motors.isChecked()
+            self._right_motor_enabled = self.ui.enable_right_motor.isChecked()
+            
+            self.master.get_logger().info(f'📊 Flags internos actualizados -> IZQ: {self._left_motor_enabled} | DER: {self._right_motor_enabled}')
+            
+        except Exception as e:
+            self.master.get_logger().error(f'❌ Error crítico en el servicio de habilitación conjunta: {str(e)}')
 
     # Handle the reset-disable response, then enable desired motors
     def _handle_reset_then_enable(self, disable_future):
@@ -1741,8 +1886,8 @@ class MiVentana(QMainWindow):
             # CRITICAL: Activate trajectory flag so timer doesn't immediately stop it
             self._impedance_trajectory_left_active = True
             self._impedance_sinusoidal_left_active = True
-            self._impedance_sinusoidal_time = 0.0
-            self.start_impedance_sinusoidal_timer()
+            self._impedance_sinusoidal_time_left = 0.0
+            self.start_impedance_sinusoidal_timer_left()
             self.master.get_logger().info('✅ [IMP-LEFT] Sinusoidal trajectory started with button')
         else:
             # Manual mode - just enable trajectory flag
@@ -1791,8 +1936,8 @@ class MiVentana(QMainWindow):
             # CRITICAL: Activate trajectory flag so timer doesn't immediately stop it
             self._impedance_trajectory_right_active = True
             self._impedance_sinusoidal_right_active = True
-            self._impedance_sinusoidal_time = 0.0
-            self.start_impedance_sinusoidal_timer()
+            self._impedance_sinusoidal_time_right = 0.0
+            self.start_impedance_sinusoidal_timer_right()
             self.master.get_logger().info('✅ [IMP-RIGHT] Sinusoidal trajectory started with button')
         else:
             # Manual mode - just enable trajectory flag
@@ -1847,81 +1992,50 @@ class MiVentana(QMainWindow):
         self.impedance_position_setpoint()
 
     def impedance_position_setpoint(self):
-        # Debug entry and gating conditions
-        self.master.get_logger().info('[IMP] impedance_position_setpoint called')
-        current_mode = getattr(self, '_current_control_mode', None)
-        motors_added = getattr(self, '_motors_added', False)
-        motors_enabled = getattr(self, '_motors_enabled', False)
-        self.master.get_logger().info(f'[IMP] mode={current_mode}, motors_added={motors_added}, motors_enabled={motors_enabled}')
-
         if not hasattr(self, '_current_control_mode') or self._current_control_mode != "IMPEDANCE":
-            self.master.get_logger().info('[IMP] Skipping: not in IMPEDANCE mode')
             return
             
-        # Check if motors are added and enabled
         if not hasattr(self, '_motors_added') or not self._motors_added:
-            self.master.get_logger().warn('⚠️ Cannot send impedance position reference: Motors not added yet!')
             return
         
         if not hasattr(self, '_motors_enabled') or not self._motors_enabled:
-            self.master.get_logger().warn('⚠️ Cannot send impedance position reference: Motors not enabled!')
-            return
-        
-        # Skip if impedance sinusoidal trajectories are active
-        if getattr(self, '_impedance_sinusoidal_left_active', False) or getattr(self, '_impedance_sinusoidal_right_active', False):
-            self.master.get_logger().info('[IMP] Skipping: impedance sinusoidal active')
             return
         
         try:
-            # Get position references from new impedance tab UI elements
-            setpoint_left = 0.0
-            setpoint_right = 0.0
+            setpoint_left = None
+            setpoint_right = None
             
-            # Check if left hip manual control is enabled
+            # Left
             left_manual_enabled = hasattr(self.ui, 'left_hip_manual_enable') and self.ui.left_hip_manual_enable.isChecked()
-            if left_manual_enabled:
+            left_trajectory_active = getattr(self, '_impedance_trajectory_left_active', False)
+            left_conflict = self._check_impedance_mode_conflict('left')
+            
+            if left_manual_enabled and left_trajectory_active and not left_conflict:
                 if hasattr(self.ui, 'left_hip_manual_box'):
                     setpoint_left = self.ui.left_hip_manual_box.value()
                     
-            # Check if right hip manual control is enabled
+            # Right
             right_manual_enabled = hasattr(self.ui, 'right_hip_manual_enable') and self.ui.right_hip_manual_enable.isChecked()
-            if right_manual_enabled:
+            right_trajectory_active = getattr(self, '_impedance_trajectory_right_active', False)
+            right_conflict = self._check_impedance_mode_conflict('right')
+            
+            if right_manual_enabled and right_trajectory_active and not right_conflict:
                 if hasattr(self.ui, 'right_hip_manual_box'):
                     setpoint_right = self.ui.right_hip_manual_box.value()
             
-            # Check for conflicts: both manual and sinusoidal enabled
-            left_conflict = self._check_impedance_mode_conflict('left')
-            right_conflict = self._check_impedance_mode_conflict('right')
-            
-            # Only send command if at least one motor is enabled AND trajectory is active AND no conflicts
-            left_trajectory_active = getattr(self, '_impedance_trajectory_left_active', False)
-            right_trajectory_active = getattr(self, '_impedance_trajectory_right_active', False)
-            
-            # Process left motor only if trajectory is active and no conflict
-            left_to_send = left_manual_enabled and left_trajectory_active and not left_conflict
-            # Process right motor only if trajectory is active and no conflict
-            right_to_send = right_manual_enabled and right_trajectory_active and not right_conflict
-            
-            self.master.get_logger().info(f'[IMP] Manual enabled: left={left_manual_enabled}, right={right_manual_enabled}; Trajectory active: left={left_trajectory_active}, right={right_trajectory_active}; To send: left={left_to_send}, right={right_to_send}')
-            
-            if left_to_send or right_to_send:
-                self.master.get_logger().info(f'[IMP] Sending impedance reference: left={setpoint_left}, right={setpoint_right}')
+            # Solo enviamos si al menos uno tiene un comando válido
+            if setpoint_left is not None or setpoint_right is not None:
                 self.send_impedance_position_reference(setpoint_left, setpoint_right)
-            else:
-                self.master.get_logger().info('[IMP] No valid motor commands to send (trajectory not active or conflict detected)')
-                print("="*60)
-                print()
 
         except Exception as e:
             self.master.get_logger().error(f'Error sending impedance position reference: {str(e)}')
 
     # Send position reference commands for impedance control
-    def send_impedance_position_reference(self, setpoint_left, setpoint_right):        
+    def send_impedance_position_reference(self, setpoint_left=None, setpoint_right=None):        
         # Determine which motors are enabled and should receive commands
         enabled_drives = []
         target_positions = []
         target_torques = []
-        setpoint_info = []
         
         # Get offset torque values from config
         offset_defaults = self.config.get_offset_torque()
@@ -1929,38 +2043,29 @@ class MiVentana(QMainWindow):
         left_enabled = hasattr(self, '_left_motor_enabled') and self._left_motor_enabled
         right_enabled = hasattr(self, '_right_motor_enabled') and self._right_motor_enabled
         
-        motor_index = 0  # Track which motor index we're at in the configured motors
-        if left_enabled:
+        # SOLUCIÓN: Solo agregamos el motor al mensaje si su setpoint NO es None
+        if left_enabled and setpoint_left is not None:
             enabled_drives.append(left_hip_can_id)
             target_positions.append(float(self.deg2rad(setpoint_left)))
-            # Get offset from UI if available, otherwise use config default
             left_offset = float(self.ui.left_hip_offset_box.value()) if hasattr(self.ui, 'left_hip_offset_box') else offset_defaults[0]
             target_torques.append(float(left_offset))
-            setpoint_info.append(f'Left={setpoint_left}°({self.deg2rad(setpoint_left):.3f}rad, offset={left_offset:.2f}Nm)')
-            motor_index += 1
             
-        if right_enabled:
+        if right_enabled and setpoint_right is not None:
             enabled_drives.append(right_hip_can_id)
             target_positions.append(float(self.deg2rad(setpoint_right)))
-            # Get offset from UI if available, otherwise use config default (index 1 if 2 motors configured)
-            offset_index = min(motor_index, len(offset_defaults) - 1)
+            offset_index = min(1, len(offset_defaults) - 1)
             right_offset = float(self.ui.right_hip_offset_box.value()) if hasattr(self.ui, 'right_hip_offset_box') else offset_defaults[offset_index]
             target_torques.append(float(right_offset))
-            setpoint_info.append(f'Right={setpoint_right}°({self.deg2rad(setpoint_right):.3f}rad, offset={right_offset:.2f}Nm)')
         
         if not enabled_drives:
-            self.master.get_logger().warn('⚠️ Cannot send impedance position reference: No motors are enabled!')
+            # Si no hay motores que actualizar, no publicamos para evitar saturar el topic
             return
         
         msg = MotionCommand()
         msg.drive_ids = enabled_drives
         msg.target_position = target_positions
         msg.target_velocity = [0.0] * len(enabled_drives)
-        msg.target_torque = target_torques  # Include offset torque for gravity compensation
-        
-        # Enhanced debugging information
-        self.master.get_logger().info(f'🏗️ Sending impedance position reference to enabled motors: {", ".join(setpoint_info)}')
-        self.master.get_logger().info(f'🏗️ Drive IDs: {msg.drive_ids}, Positions: {msg.target_position}, Torques: {msg.target_torque}')
+        msg.target_torque = target_torques 
         
         self.master.publisher_motion_commands.publish(msg)
 
@@ -2031,7 +2136,14 @@ class MiVentana(QMainWindow):
             self.master.get_logger().info('🛑 [IMP-RIGHT] Sinusoidal mode disabled')
 
     # Start the impedance sinusoidal trajectory timer if not already running
-    def start_impedance_sinusoidal_timer(self):
+    def start_impedance_sinusoidal_timer_left(self):
+        if self._impedance_sinusoidal_timer is None:
+            self._impedance_sinusoidal_timer = QTimer()
+            self._impedance_sinusoidal_timer.timeout.connect(self.update_impedance_sinusoidal_trajectory)
+            self._impedance_sinusoidal_timer.start(50)  # 20 Hz update rate
+            self.master.get_logger().info('⏰ Impedance sinusoidal timer started (20 Hz)')
+
+    def start_impedance_sinusoidal_timer_right(self):
         if self._impedance_sinusoidal_timer is None:
             self._impedance_sinusoidal_timer = QTimer()
             self._impedance_sinusoidal_timer.timeout.connect(self.update_impedance_sinusoidal_trajectory)
@@ -2050,99 +2162,59 @@ class MiVentana(QMainWindow):
     def update_impedance_sinusoidal_trajectory(self):
         import math
         
-        # Update time
-        self._impedance_sinusoidal_time += 0.05  # 50ms increment
+        setpoint_left = None
+        setpoint_right = None
         
-        # Calculate positions for active trajectories
-        setpoint_left = 0.0
-        setpoint_right = 0.0
-        
-        # Conflict or trajectory gating checks before computing setpoints
-        # If trajectory flag is false, stop any running sine on that side
+        # Checks de parada...
         if self._impedance_sinusoidal_left_active and not getattr(self, '_impedance_trajectory_left_active', False):
-            self.master.get_logger().warn('⚠️ [IMP-LEFT] Stopping sine: trajectory stopped via button')
             self._impedance_sinusoidal_left_active = False
-            if hasattr(self.ui, 'left_hip_sine_enable'):
-                self.ui.left_hip_sine_enable.setChecked(False)
+            if hasattr(self.ui, 'left_hip_sine_enable'): self.ui.left_hip_sine_enable.setChecked(False)
             self.check_stop_impedance_sinusoidal_timer()
 
         if self._impedance_sinusoidal_right_active and not getattr(self, '_impedance_trajectory_right_active', False):
-            self.master.get_logger().warn('⚠️ [IMP-RIGHT] Stopping sine: trajectory stopped via button')
             self._impedance_sinusoidal_right_active = False
-            if hasattr(self.ui, 'right_hip_sine_enable'):
-                self.ui.right_hip_sine_enable.setChecked(False)
+            if hasattr(self.ui, 'right_hip_sine_enable'): self.ui.right_hip_sine_enable.setChecked(False)
             self.check_stop_impedance_sinusoidal_timer()
 
-        # Conflict check while running sine
-        if self._impedance_sinusoidal_left_active and self._check_impedance_mode_conflict('left'):
-            self.master.get_logger().error('❌ [IMP-LEFT] Conflict detected during sine, stopping')
-            self._impedance_sinusoidal_left_active = False
-            if hasattr(self.ui, 'left_hip_sine_enable'):
-                self.ui.left_hip_sine_enable.setChecked(False)
-            self.check_stop_impedance_sinusoidal_timer()
-
-        if self._impedance_sinusoidal_right_active and self._check_impedance_mode_conflict('right'):
-            self.master.get_logger().error('❌ [IMP-RIGHT] Conflict detected during sine, stopping')
-            self._impedance_sinusoidal_right_active = False
-            if hasattr(self.ui, 'right_hip_sine_enable'):
-                self.ui.right_hip_sine_enable.setChecked(False)
-            self.check_stop_impedance_sinusoidal_timer()
-
-        if self._impedance_sinusoidal_left_active:
+        # Izquierda
+        if self._impedance_sinusoidal_left_active and not self._check_impedance_mode_conflict('left'):
+            self._impedance_sinusoidal_time_left += 0.05
             try:
-                # Get parameters from new impedance tab
-                freq = self.ui.left_hip_sine_freq.value() if hasattr(self.ui, 'left_hip_sine_freq') else 0.5  # Hz
-                amplitude = self.ui.left_hip_sine_amp.value() if hasattr(self.ui, 'left_hip_sine_amp') else 10.0  # degrees
-                offset = self.ui.left_hip_sine_offset.value() if hasattr(self.ui, 'left_hip_sine_offset') else 0.0  # degrees
-                cycles = self.ui.left_hip_sine_cycles.value() if hasattr(self.ui, 'left_hip_sine_cycles') else 0  # total cycles
+                freq = self.ui.left_hip_sine_freq.value() if hasattr(self.ui, 'left_hip_sine_freq') else 0.5
+                amplitude = self.ui.left_hip_sine_amp.value() if hasattr(self.ui, 'left_hip_sine_amp') else 10.0
+                offset = self.ui.left_hip_sine_offset.value() if hasattr(self.ui, 'left_hip_sine_offset') else 0.0
+                cycles = self.ui.left_hip_sine_cycles.value() if hasattr(self.ui, 'left_hip_sine_cycles') else 0
                 
-                # Log parameters on first iteration
-                if self._impedance_sinusoidal_time <= 0.1:
-                    self.master.get_logger().info(f'📊 Left motor sine parameters: freq={freq}Hz, amp={amplitude}°, offset={offset}°, cycles={cycles}')
-                
-                # Check if trajectory should end
-                if cycles > 0 and self._impedance_sinusoidal_time * freq >= cycles:
+                if cycles > 0 and self._impedance_sinusoidal_time_left * freq >= cycles:
                     self._impedance_sinusoidal_left_active = False
                     self.ui.left_hip_sine_enable.setChecked(False)
                     self.check_stop_impedance_sinusoidal_timer()
-                    self.master.get_logger().info('✅ Left motor sinusoidal trajectory completed')
-                    print(60*"=")
-                    print()
-                    return
-                    
-                setpoint_left = offset + amplitude * math.sin(2 * math.pi * freq * self._impedance_sinusoidal_time)
-            except Exception as e:
-                # Use default values if UI elements don't exist
-                self.master.get_logger().warn(f'⚠️ Error reading left sine parameters, using defaults: {e}')
-                setpoint_left = 10.0 * math.sin(2 * math.pi * 0.5 * self._impedance_sinusoidal_time)
-                
-        if self._impedance_sinusoidal_right_active:
+                else:
+                    setpoint_left = offset + amplitude * math.sin(2 * math.pi * freq * self._impedance_sinusoidal_time_left)
+            except Exception:
+                setpoint_left = 10.0 * math.sin(2 * math.pi * 0.5 * self._impedance_sinusoidal_time_left)
+
+        # Derecha
+        if self._impedance_sinusoidal_right_active and not self._check_impedance_mode_conflict('right'):
+            self._impedance_sinusoidal_time_right += 0.05
             try:
-                # Get parameters from new impedance tab
-                freq = self.ui.right_hip_sine_freq.value() if hasattr(self.ui, 'right_hip_sine_freq') else 0.5  # Hz
-                amplitude = self.ui.right_hip_sine_amp.value() if hasattr(self.ui, 'right_hip_sine_amp') else 10.0  # degrees
-                offset = self.ui.right_hip_sine_offset.value() if hasattr(self.ui, 'right_hip_sine_offset') else 0.0  # degrees
-                cycles = self.ui.right_hip_sine_cycles.value() if hasattr(self.ui, 'right_hip_sine_cycles') else 0  # total cycles
+                freq = self.ui.right_hip_sine_freq.value() if hasattr(self.ui, 'right_hip_sine_freq') else 0.5
+                amplitude = self.ui.right_hip_sine_amp.value() if hasattr(self.ui, 'right_hip_sine_amp') else 10.0
+                offset = self.ui.right_hip_sine_offset.value() if hasattr(self.ui, 'right_hip_sine_offset') else 0.0
+                cycles = self.ui.right_hip_sine_cycles.value() if hasattr(self.ui, 'right_hip_sine_cycles') else 0
                 
-                # Log parameters on first iteration
-                if self._impedance_sinusoidal_time <= 0.1:
-                    self.master.get_logger().info(f'📊 Right motor sine parameters: freq={freq}Hz, amp={amplitude}°, offset={offset}°, cycles={cycles}')
-                
-                # Check if trajectory should end
-                if cycles > 0 and self._impedance_sinusoidal_time * freq >= cycles:
+                if cycles > 0 and self._impedance_sinusoidal_time_right * freq >= cycles:
                     self._impedance_sinusoidal_right_active = False
                     self.ui.right_hip_sine_enable.setChecked(False)
                     self.check_stop_impedance_sinusoidal_timer()
-                    self.master.get_logger().info('✅ Right motor sinusoidal trajectory completed')
-                    print(60*"=")
-                    print()
-                    return
-                    
-                setpoint_right = offset + amplitude * math.sin(2 * math.pi * freq * self._impedance_sinusoidal_time)
-            except Exception as e:
-                # Use default values if UI elements don't exist
-                self.master.get_logger().warn(f'⚠️ Error reading right sine parameters, using defaults: {e}')
-                setpoint_right = 10.0 * math.sin(2 * math.pi * 0.5 * self._impedance_sinusoidal_time)
+                else:
+                    setpoint_right = offset + amplitude * math.sin(2 * math.pi * freq * self._impedance_sinusoidal_time_right)
+            except Exception:
+                setpoint_right = 10.0 * math.sin(2 * math.pi * 0.5 * self._impedance_sinusoidal_time_right)
+
+        # Publicar solo los válidos
+        if setpoint_left is not None or setpoint_right is not None:
+            self.send_impedance_position_reference(setpoint_left, setpoint_right)
 
         # Send the combined impedance trajectory command only if trajectories remain active
         left_traj_active = self._impedance_sinusoidal_left_active and getattr(self, '_impedance_trajectory_left_active', False)
@@ -2150,8 +2222,12 @@ class MiVentana(QMainWindow):
 
         if left_traj_active or right_traj_active:
             # Log trajectory progress every 1 second
-            if int(self._impedance_sinusoidal_time * 20) % 20 == 0:  # Every 1 second at 20Hz
-                self.master.get_logger().info(f'🌊 Impedance sinusoidal trajectory t={self._impedance_sinusoidal_time:.1f}s: Left={setpoint_left:.1f}°, Right={setpoint_right:.1f}°')
+            # Every 1 second at 20Hz print info using the separate times
+            if self._impedance_sinusoidal_left_active and int(self._impedance_sinusoidal_time_left * 20) % 20 == 0:
+                self.master.get_logger().info(f"[LEFT] Impedance trajectory active. Ref: {setpoint_left:.2f} deg")
+                
+            if self._impedance_sinusoidal_right_active and int(self._impedance_sinusoidal_time_right * 20) % 20 == 0:
+                self.master.get_logger().info(f"[RIGHT] Impedance trajectory active. Ref: {setpoint_right:.2f} deg")
             
             # Use the impedance position reference function
             self.send_impedance_position_reference(setpoint_left, setpoint_right)

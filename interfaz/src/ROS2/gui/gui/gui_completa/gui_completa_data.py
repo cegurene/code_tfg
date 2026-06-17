@@ -791,6 +791,9 @@ class Ui_MainWindow(object):
         self.graph = FigureCanvasQTAgg(parent=self.widget_2)
         self.graph.setGeometry(QtCore.QRect(10, 30, 611, 325))
         self.graph.setObjectName("graph")
+        self.botonHabilitarMotores = QtWidgets.QPushButton(parent=self.centralwidget)
+        self.botonHabilitarMotores.setGeometry(QtCore.QRect(260, 110, 151, 27))
+        self.botonHabilitarMotores.setObjectName("botonHabilitarMotores")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(parent=MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1332, 21))
@@ -808,7 +811,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menusENSORE.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(4)
+        self.tabWidget.setCurrentIndex(0)
         self.cadera_izq_setpoint_slider_manual.valueChanged['int'].connect(self.cadera_izq_setpoint_box_manual.setValue) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
@@ -943,6 +946,7 @@ class Ui_MainWindow(object):
         self.graph_display_combo.setItemText(1, _translate("MainWindow", "Ambos motores"))
         self.graph_display_combo.setItemText(2, _translate("MainWindow", "Motor izquierdo"))
         self.graph_display_combo.setItemText(3, _translate("MainWindow", "Motor derecho"))
+        self.botonHabilitarMotores.setText(_translate("MainWindow", "Habilitar"))
         self.menuNLR.setTitle(_translate("MainWindow", "NLR"))
         self.menusENSORE.setTitle(_translate("MainWindow", "Sensores"))
 from gui.mplGraph import FigureCanvasQTAgg

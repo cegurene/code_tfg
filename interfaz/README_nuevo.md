@@ -34,7 +34,7 @@ sudo apt install ros-jazzy-plotjuggler-ros
 
 ### 1. Compilar el workspace
 ```bash
-cd /home/carlos/Escritorio/assistive_exo_ws
+cd /directorio_base
 colcon build
 source install/setup.bash
 ```
