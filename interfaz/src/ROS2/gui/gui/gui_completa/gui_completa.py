@@ -192,7 +192,6 @@ class MiVentana(QMainWindow):
         # TEST: Add button for simultaneous enable (temporary)
         # self.ui.some_button.pressed.connect(self.enable_both_motors_test)  # Uncomment when we add button
         self.ui.control_set.pressed.connect(self.set_control)
-        self.ui.cadera_izq_setpoint_slider_manual.valueChanged.connect(self.slider_setpoint)
         if hasattr(self.ui, 'cadera_der_setpoint_slider_manual'):
             self.ui.cadera_der_setpoint_slider_manual.valueChanged.connect(self.slider_setpoint)
         self.ui.carpeta_guardado_btn.pressed.connect(self.select_folder_to_save)
@@ -208,11 +207,6 @@ class MiVentana(QMainWindow):
         # Connect training
         self.ui.button_empezar_entrenamiento.pressed.connect(self.launch_training)
         self.ui.texto_salida_entrenamiento.setReadOnly(True)
-        
-        # Connect sinusoidal trajectory radio buttons
-        self.ui.cadera_setpoint_senoidal_btn.toggled.connect(self.start_sinusoidal_trajectory_left)
-        if hasattr(self.ui, 'cadera_der_setpoint_senoidal_btn'):
-            self.ui.cadera_der_setpoint_senoidal_btn.toggled.connect(self.start_sinusoidal_trajectory_right)
         
         # Impedance control layout is now created in Qt Designer
         # Connect impedance tab widgets (created in Qt Designer)
@@ -1578,12 +1572,6 @@ class MiVentana(QMainWindow):
     def reset_all_sliders(self):
         """Reset all manual control sliders to 0 position"""
         try:
-            # Reset left hip sliders
-            if hasattr(self.ui, 'cadera_izq_setpoint_slider_manual'):
-                self.ui.cadera_izq_setpoint_slider_manual.setValue(0)
-            if hasattr(self.ui, 'cadera_izq_setpoint_box_manual'):
-                self.ui.cadera_izq_setpoint_box_manual.setValue(0)
-                
             # Reset right hip sliders  
             if hasattr(self.ui, 'cadera_der_setpoint_slider_manual'):
                 self.ui.cadera_der_setpoint_slider_manual.setValue(0)
@@ -1616,8 +1604,6 @@ class MiVentana(QMainWindow):
                 self.ui.cadera_der_setpoint_manual_btn.setChecked(False)
                 
             # Stop any active sinusoidal trajectories
-            if hasattr(self.ui, 'cadera_setpoint_senoidal_btn'):
-                self.ui.cadera_setpoint_senoidal_btn.setChecked(False)
             if hasattr(self.ui, 'cadera_der_setpoint_senoidal_btn'):
                 self.ui.cadera_der_setpoint_senoidal_btn.setChecked(False)
                 
@@ -1629,61 +1615,7 @@ class MiVentana(QMainWindow):
             self.master.get_logger().info('🔄 All sliders and parameters reset to 0')
             
         except Exception as e:
-            self.master.get_logger().error(f'Error resetting sliders: {str(e)}')
-
-    # Start or stop sinusoidal trajectory for left motor in position control mode and manages timer.
-    def start_sinusoidal_trajectory_left(self, checked):
-        if checked:
-            if not hasattr(self, '_motors_added') or not self._motors_added:
-                self.master.get_logger().warn('⚠️ Cannot start sinusoidal trajectory: Motors not added yet!')
-                self.ui.cadera_setpoint_senoidal_btn.setChecked(False)
-                return
-                
-            if not hasattr(self, '_motors_enabled') or not self._motors_enabled:
-                self.master.get_logger().warn('⚠️ Cannot start sinusoidal trajectory: Motors not enabled!')
-                self.ui.cadera_setpoint_senoidal_btn.setChecked(False)
-                return
-                
-            if not hasattr(self, '_current_control_mode') or self._current_control_mode != "POSITION_PID":
-                self.master.get_logger().warn('⚠️ Cannot start sinusoidal trajectory: Not in Position Control mode!')
-                self.ui.cadera_setpoint_senoidal_btn.setChecked(False)
-                return
-                
-            self._sinusoidal_left_active = True
-            self._sinusoidal_time = 0.0
-            self.start_sinusoidal_timer()
-            self.master.get_logger().info('🌊 Started sinusoidal trajectory for LEFT motor')
-        else:
-            self._sinusoidal_left_active = False
-            self.check_stop_sinusoidal_timer()
-            self.master.get_logger().info('🛑 Stopped sinusoidal trajectory for LEFT motor')
-
-    # Start or stop sinusoidal trajectory for right motor in position control mode and manages timer.
-    def start_sinusoidal_trajectory_right(self, checked):
-        if checked:
-            if not hasattr(self, '_motors_added') or not self._motors_added:
-                self.master.get_logger().warn('⚠️ Cannot start sinusoidal trajectory: Motors not added yet!')
-                self.ui.cadera_der_setpoint_senoidal_btn.setChecked(False)
-                return
-                
-            if not hasattr(self, '_motors_enabled') or not self._motors_enabled:
-                self.master.get_logger().warn('⚠️ Cannot start sinusoidal trajectory: Motors not enabled!')
-                self.ui.cadera_der_setpoint_senoidal_btn.setChecked(False)
-                return
-                
-            if not hasattr(self, '_current_control_mode') or self._current_control_mode != "POSITION_PID":
-                self.master.get_logger().warn('⚠️ Cannot start sinusoidal trajectory: Not in Position Control mode!')
-                self.ui.cadera_der_setpoint_senoidal_btn.setChecked(False)
-                return
-                
-            self._sinusoidal_right_active = True
-            self._sinusoidal_time = 0.0
-            self.start_sinusoidal_timer()
-            self.master.get_logger().info('🌊 Started sinusoidal trajectory for RIGHT motor')
-        else:
-            self._sinusoidal_right_active = False
-            self.check_stop_sinusoidal_timer()
-            self.master.get_logger().info('🛑 Stopped sinusoidal trajectory for RIGHT motor')
+            self.master.get_logger().error(f'Error resetting sliders: {str(e)}')    
 
     # Start the sinusoidal trajectory timer if not already running
     def start_sinusoidal_timer(self):
