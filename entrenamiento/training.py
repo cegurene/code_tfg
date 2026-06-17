@@ -319,14 +319,15 @@ class EpisodeDataCallback(BaseCallback):
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     run_tag = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    script_dir = Path(__file__).resolve().parent
 
     parser.add_argument("--total-timesteps", type=int, default=1_000_000)
-    parser.add_argument("--log-dir", type=Path, default=Path("outputs/sb3/mimo_sac"))
+    parser.add_argument("--log-dir", type=Path, default=script_dir.parent / "outputs" / "entrenamiento")
     parser.add_argument(
         "--scone-results-dir",
         type=str,
-        default=Path(str(run_tag)),
-        help="Base directory where SCONE result folders will be written",
+        default="",
+        help="Base directory where SCONE result folders will be written (optional)",
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed for reproducibility")
     parser.add_argument("--checkpoint-freq", type=int, default=25_000, help="Checkpoint frequency in env steps")
@@ -381,8 +382,6 @@ def main():
 
         env = gym.make(ENV_ID)
 
-        scone_results_root = args.scone_results_dir.expanduser().resolve()
-        scone_results_root.mkdir(parents=True, exist_ok=True)
         launch_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         class SavePeriodicScone(gym.Wrapper):
@@ -441,12 +440,13 @@ def main():
             env = SavePeriodicScone(env, save_freq=args.checkpoint_freq)
 
         try:
-            env.unwrapped.results_dir = str(scone_results_root)
-            env.unwrapped.set_output_dir(str(scone_results_root / f"{launch_stamp}.{env.unwrapped.model.name()}"))
+            if args.scone_results_dir:
+                env.unwrapped.results_dir = str(Path(args.scone_results_dir).expanduser().resolve())
+            env.unwrapped.set_output_dir(f"{launch_stamp}.{env.unwrapped.model.name()}")
         except Exception:
             pass
 
-        run_dir = args.log_dir / "checkpoints" / launch_stamp
+        run_dir = args.log_dir / launch_stamp
         run_dir.mkdir(parents=True, exist_ok=True)
 
         # Config file
