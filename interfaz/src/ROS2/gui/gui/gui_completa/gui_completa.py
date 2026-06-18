@@ -38,6 +38,11 @@ from collections import deque
 from sensor_msgs.msg import JointState
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 
+# ROS2 Bag and Serialization imports
+import rosbag2_py
+from rclpy.serialization import deserialize_message
+from rosidl_runtime_py.utilities import get_message
+
 # Candle ROS2 service and message imports
 from candle_ros2.srv import AddMd80s, GenericMd80Msg, SetLimitsMd80, SetModeMd80s
 from candle_ros2.msg import ImpedanceCommand, MotionCommand, Pid, PositionPidCommand, VelocityPidCommand
@@ -168,6 +173,11 @@ class MiVentana(QMainWindow):
         self._impedance_trajectory_left_active = False  # True only when start_traj_btn is pressed
         self._impedance_trajectory_right_active = False  # True only when start_traj_btn is pressed
 
+        # Archive replay variables
+        self._replay_timer = None
+        self._replay_data = []
+        self._replay_index = 0
+
         # Set QoS profile for subscriptions
         qos_profile = QoSProfile(depth=10)
         qos_profile.reliability = ReliabilityPolicy.BEST_EFFORT
@@ -201,8 +211,6 @@ class MiVentana(QMainWindow):
 
         # Connect MIMo
         self.ui.buttonLaunchSimMimo.pressed.connect(self.launch_sim_mimo)
-        self.ui.buttonRealSimMimo.pressed.connect(self.launch_real_mimo)
-        self.ui.carpeta_mimo_real_boton.pressed.connect(self.select_folder_mimo_real)
 
         # Connect training
         self.ui.button_empezar_entrenamiento.pressed.connect(self.launch_training)
@@ -265,6 +273,22 @@ class MiVentana(QMainWindow):
                 self.master.get_logger().info('🚫 Hidden torque control option')
         except AttributeError:
             pass  # Torque control doesn't exist
+
+        # Hide position control radio button (if it exists)
+        try:
+            if hasattr(self.ui, 'position_control'):
+                self.ui.position_control.setVisible(False)
+                self.master.get_logger().info('🚫 Hidden position control option')
+        except AttributeError:
+            pass  # Position control doesn't exist
+
+        # Hide velocity control radio button (if it exists)
+        try:
+            if hasattr(self.ui, 'velocity_control'):
+                self.ui.velocity_control.setVisible(False)
+                self.master.get_logger().info('🚫 Hidden velocity control option')
+        except AttributeError:
+            pass  # Velocity control doesn't exist
 
         # Setup real-time position graph widget (promoted widget: graph/widget)
         self._setup_position_graph()

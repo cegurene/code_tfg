@@ -30,12 +30,12 @@
      <rect>
       <x>660</x>
       <y>60</y>
-      <width>661</width>
+      <width>621</width>
       <height>461</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab_4">
      <attribute name="title">
@@ -494,110 +494,18 @@
      <attribute name="title">
       <string>Archivo</string>
      </attribute>
-     <widget class="QWidget" name="layoutWidget_7">
+     <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
-        <x>50</x>
-        <y>130</y>
-        <width>371</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_5">
-       <item>
-        <widget class="QPushButton" name="Archive_setpoint_play">
-         <property name="text">
-          <string>Play</string>
-         </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>../../../../../../../../../../../../Downloads/play.png</normaloff>
-           <normalon>../../../../../../../../../../../../Downloads/play.png</normalon>../../../../../../../../../../../../Downloads/play.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="Archive_setpoint_pause">
-         <property name="text">
-          <string>Pause</string>
-         </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>../../../../../../../../../../../../Downloads/pause.png</normaloff>../../../../../../../../../../../../Downloads/pause.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="Archive_setpoint_stop">
-         <property name="text">
-          <string>Stop</string>
-         </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>../../../../../../../../../../../../Downloads/stop.png</normaloff>../../../../../../../../../../../../Downloads/stop.png</iconset>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QLineEdit" name="nombre_carpeta_setpoint">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
+        <x>140</x>
         <y>70</y>
-        <width>399</width>
-        <height>24</height>
+        <width>351</width>
+        <height>251</height>
        </rect>
       </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="nombre_archivo_setpoint">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>100</y>
-        <width>399</width>
-        <height>24</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="archivo_setpoint_btn">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>30</y>
-        <width>399</width>
-        <height>28</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Seleccionar archivo</string>
-      </property>
-     </widget>
-     <widget class="QWidget" name="layoutWidget_8">
-      <property name="geometry">
-       <rect>
-        <x>120</x>
-        <y>180</y>
-        <width>251</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <layout class="QFormLayout" name="formLayout_9">
-       <item row="0" column="0">
-        <widget class="QLabel" name="frecuenciaLabel_9">
-         <property name="text">
-          <string>Estado:         </string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="Archive_state">
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="7" column="0">
+        <widget class="QLabel" name="estado_record_data">
          <property name="enabled">
           <bool>true</bool>
          </property>
@@ -607,7 +515,85 @@
           </font>
          </property>
          <property name="text">
-          <string>Parado</string>
+          <string>Apagado</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLineEdit" name="nombre_archivo_guardado">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>11</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Nombre del archivo:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>20</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Guardado datos</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLineEdit" name="nombre_carpeta_guardado">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QPushButton" name="save_play_button">
+           <property name="text">
+            <string>Play</string>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../../../../../../../../../../Downloads/play.png</normaloff>
+             <normalon>../../../../../../../../../../../../Downloads/play.png</normalon>../../../../../../../../../../../../Downloads/play.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="save_stop_button">
+           <property name="text">
+            <string>Stop</string>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../../../../../../../../../../Downloads/stop.png</normaloff>../../../../../../../../../../../../Downloads/stop.png</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="2" column="0">
+        <widget class="QPushButton" name="carpeta_guardado_btn">
+         <property name="text">
+          <string>Seleccionar carpeta</string>
          </property>
         </widget>
        </item>
@@ -621,10 +607,10 @@
      <widget class="QWidget" name="formLayoutWidget_3">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>30</y>
-        <width>231</width>
-        <height>381</height>
+        <x>50</x>
+        <y>20</y>
+        <width>501</width>
+        <height>391</height>
        </rect>
       </property>
       <layout class="QFormLayout" name="formLayout_3">
@@ -635,7 +621,7 @@
          </property>
          <property name="font">
           <font>
-           <pointsize>11</pointsize>
+           <pointsize>15</pointsize>
           </font>
          </property>
          <property name="text">
@@ -831,7 +817,7 @@
         <widget class="QLabel" name="label_20">
          <property name="font">
           <font>
-           <pointsize>8</pointsize>
+           <pointsize>10</pointsize>
           </font>
          </property>
          <property name="text">
@@ -843,127 +829,11 @@
         <widget class="QLabel" name="label_23">
          <property name="font">
           <font>
-           <pointsize>8</pointsize>
+           <pointsize>10</pointsize>
           </font>
          </property>
          <property name="text">
           <string>lanzar el script de simulación</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="formLayoutWidget_4">
-      <property name="geometry">
-       <rect>
-        <x>260</x>
-        <y>30</y>
-        <width>381</width>
-        <height>381</height>
-       </rect>
-      </property>
-      <layout class="QFormLayout" name="formLayout_7">
-       <item row="0" column="0">
-        <widget class="QLabel" name="label_24">
-         <property name="font">
-          <font>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Motor real</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_34">
-         <property name="font">
-          <font>
-           <pointsize>8</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Para una personalización
-completa, lanzar el script
-de motor real</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_38">
-         <property name="text">
-          <string>CSV origen</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="carpeta_csv_origen_mimo_real"/>
-       </item>
-       <item row="8" column="0" colspan="2">
-        <widget class="QPushButton" name="buttonRealSimMimo">
-         <property name="text">
-          <string>Lanzar motor real</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="nombre_csv_origen_mimo_real"/>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_35">
-         <property name="text">
-          <string>Motor id</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QSpinBox" name="selector_motor_id_mimo_real">
-         <property name="minimum">
-          <number>348</number>
-         </property>
-         <property name="maximum">
-          <number>349</number>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_39">
-         <property name="text">
-          <string>Aplicar Torque?</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QRadioButton" name="selector_apply_torque_true">
-         <property name="text">
-          <string>Si</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QRadioButton" name="selector_apply_torque_false">
-         <property name="text">
-          <string>No</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_40">
-         <property name="text">
-          <string>Se usará pycandle
-para la conexión.
-Para usar ROS2 lanzar
-script de motor real</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QPushButton" name="carpeta_mimo_real_boton">
-         <property name="text">
-          <string>Carpeta</string>
          </property>
         </widget>
        </item>
@@ -977,7 +847,7 @@ script de motor real</string>
      <widget class="QWidget" name="formLayoutWidget_5">
       <property name="geometry">
        <rect>
-        <x>60</x>
+        <x>40</x>
         <y>40</y>
         <width>291</width>
         <height>111</height>
@@ -1030,7 +900,7 @@ checkpoints</string>
      <widget class="QPushButton" name="button_empezar_entrenamiento">
       <property name="geometry">
        <rect>
-        <x>380</x>
+        <x>360</x>
         <y>110</y>
         <width>221</width>
         <height>41</height>
@@ -1043,9 +913,9 @@ checkpoints</string>
      <widget class="QLabel" name="label_41">
       <property name="geometry">
        <rect>
-        <x>370</x>
+        <x>350</x>
         <y>40</y>
-        <width>271</width>
+        <width>241</width>
         <height>51</height>
        </rect>
       </property>
@@ -1058,7 +928,7 @@ del script &quot;nair_mimoEnv.py&quot;</string>
      <widget class="QPlainTextEdit" name="texto_salida_entrenamiento">
       <property name="geometry">
        <rect>
-        <x>60</x>
+        <x>40</x>
         <y>170</y>
         <width>541</width>
         <height>231</height>
@@ -1355,111 +1225,6 @@ del script &quot;nair_mimoEnv.py&quot;</string>
       <widget class="QLabel" name="cadera_der_velocidad_label">
        <property name="text">
         <string>Velocidad</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QWidget" name="layoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>970</x>
-      <y>560</y>
-      <width>261</width>
-      <height>251</height>
-     </rect>
-    </property>
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="7" column="0">
-      <widget class="QLabel" name="estado_record_data">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>11</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Apagado</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QLineEdit" name="nombre_archivo_guardado">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>11</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Nombre del archivo:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_7">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>20</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Guardado datos</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLineEdit" name="nombre_carpeta_guardado">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QPushButton" name="save_play_button">
-         <property name="text">
-          <string>Play</string>
-         </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>../../../../../../../../../../../../Downloads/play.png</normaloff>
-           <normalon>../../../../../../../../../../../../Downloads/play.png</normalon>../../../../../../../../../../../../Downloads/play.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="save_stop_button">
-         <property name="text">
-          <string>Stop</string>
-         </property>
-         <property name="icon">
-          <iconset>
-           <normaloff>../../../../../../../../../../../../Downloads/stop.png</normaloff>../../../../../../../../../../../../Downloads/stop.png</iconset>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="2" column="0">
-      <widget class="QPushButton" name="carpeta_guardado_btn">
-       <property name="text">
-        <string>Seleccionar carpeta</string>
        </property>
       </widget>
      </item>
