@@ -275,7 +275,7 @@ def _plot_run(plot_path: str, show_plot: bool, time_s: np.ndarray, ql: np.ndarra
     import matplotlib.pyplot as plt
 
     os.makedirs(os.path.dirname(plot_path) or ".", exist_ok=True)
-    fig, axes = plt.subplots(3, 2, figsize=(16, 12), sharex=True)
+    fig, axes = plt.subplots(2, 2, figsize=(20, 16), sharex=True)
 
     axes[0, 0].plot(time_s, ql_des, color="#d62728", linewidth=1.5, label="Objetivo L")
     axes[0, 0].plot(time_s, ql, color="#1f5c9a", linewidth=2.0, label="Real L (348)")
@@ -290,29 +290,22 @@ def _plot_run(plot_path: str, show_plot: bool, time_s: np.ndarray, ql: np.ndarra
     axes[0, 1].grid(True, alpha=0.25)
     axes[0, 1].legend(loc="best", frameon=False)
 
+    axes[1, 0].plot(time_s, taul_agent, color="#8a2be2", linewidth=1.5, label="Torque Agente L")
+    axes[1, 0].plot(time_s, taul_combined, color="#ff7f0e", linewidth=2.0, label="Torque Combinado L")
     axes[1, 0].plot(time_s, taul_pid, color="#2b8a3e", linewidth=1.8, label="Torque PID L")
     axes[1, 0].set_ylabel("Torque [Nm]")
-    axes[1, 0].set_title("Torque PID Izquierdo")
+    axes[1, 0].set_xlabel("Tiempo [s]")
+    axes[1, 0].set_title("Torque Izquierdo")
     axes[1, 0].grid(True, alpha=0.25)
+    axes[1, 0].legend(loc="best", frameon=False)
 
+    axes[1, 1].plot(time_s, taur_agent, color="#8a2be2", linewidth=1.5, label="Torque Agente R")
+    axes[1, 1].plot(time_s, taur_combined, color="#ff7f0e", linewidth=2.0, label="Torque Combinado R")
     axes[1, 1].plot(time_s, taur_pid, color="#2b8a3e", linewidth=1.8, label="Torque PID R")
-    axes[1, 1].set_title("Torque PID Derecho")
+    axes[1, 1].set_xlabel("Tiempo [s]")
+    axes[1, 1].set_title("Torque Agente y Combinado Derecho")
     axes[1, 1].grid(True, alpha=0.25)
-
-    axes[2, 0].plot(time_s, taul_agent, color="#8a2be2", linewidth=1.5, label="Torque Agente L")
-    axes[2, 0].plot(time_s, taul_combined, color="#ff7f0e", linewidth=2.0, label="Torque Combinado L")
-    axes[2, 0].set_ylabel("Torque [Nm]")
-    axes[2, 0].set_xlabel("Tiempo [s]")
-    axes[2, 0].set_title("Torque Agente y Combinado Izquierdo")
-    axes[2, 0].grid(True, alpha=0.25)
-    axes[2, 0].legend(loc="best", frameon=False)
-
-    axes[2, 1].plot(time_s, taur_agent, color="#8a2be2", linewidth=1.5, label="Torque Agente R")
-    axes[2, 1].plot(time_s, taur_combined, color="#ff7f0e", linewidth=2.0, label="Torque Combinado R")
-    axes[2, 1].set_xlabel("Tiempo [s]")
-    axes[2, 1].set_title("Torque Agente y Combinado Derecho")
-    axes[2, 1].grid(True, alpha=0.25)
-    axes[2, 1].legend(loc="best", frameon=False)
+    axes[1, 1].legend(loc="best", frameon=False)
 
     plt.tight_layout()
     plt.savefig(plot_path, dpi=220)
@@ -681,6 +674,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--kd", type=float, default=0.0, help="Ganancia derivativa PID.")
     p.add_argument("--period", type=float, default=2.1, help="Duración en segundos de un ciclo.")
     p.add_argument("--phase-offset-l", type=float, default=50.0, help="Desfase pierna izquierda.")
+    p.add_argument("--num-cycles", type=float, default=1.0, help="Número de ciclos de la trayectoria a ejecutar.")
     p.add_argument("--safe-torque-limit", type=float, default=10.0, help="Límite seguro en Nm.")
     p.add_argument("--run-dir", default="", help="Directorio salida.")
     p.add_argument("--csv-path", default="", help="Ruta CSV.")
@@ -821,8 +815,8 @@ def main() -> int:
     try:
         while True:
             now = time.time()
-            t_rel = now - t0
-            if t_rel > float(source.time_s[-1]):
+            t_rel = (now - t0)
+            if t_rel > float(args.num_cycles * period):
                 print("Trayectoria completada.")
                 break
 
@@ -832,14 +826,26 @@ def main() -> int:
             current_qd_l = float(interface.current_vel[348])
             current_qd_r = float(interface.current_vel[349])
 
-            target_q_l, target_q_r, target_qd_l, target_qd_r = _sample_source(source, t_rel)
+            # Muestrear la trayectoria de referencia de forma cíclica
+            target_q_l, target_q_r, target_qd_l, target_qd_r = _sample_source(source, t_rel % period)
+
+            # Invertir las observaciones de la cadera izquierda para el agente
+            # (el agente ha aprendido que positivo = flexion para ambas caderas)
+            inverted_current_q_l = -current_q_l
+            inverted_current_qd_l = -current_qd_l
+            inverted_target_q_l = -target_q_l
+            inverted_target_qd_l = -target_qd_l
+            
+            # Invertir la última acción del agente para la cadera izquierda antes de pasarla
+            inverted_last_agent_action = last_agent_action.copy()
+            inverted_last_agent_action[1] = -inverted_last_agent_action[1] # last_action[1] es para la cadera izquierda
 
             # =======================================================
             # COMUNICACIÓN CON LA IA POR EL PIPE (No bloquea el motor)
             # =======================================================
             sac_observation = _get_sac_observation(
-                t_rel, period, current_q_l, current_qd_l, current_q_r, current_qd_r,
-                target_q_l, target_q_r, target_qd_l, target_qd_r, last_agent_action,
+                t_rel, period, inverted_current_q_l, inverted_current_qd_l, current_q_r, current_qd_r,
+                inverted_target_q_l, target_q_r, inverted_target_qd_l, target_qd_r, inverted_last_agent_action,
                 phase_offset_l=args.phase_offset_l
             )
             
