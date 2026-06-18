@@ -13,6 +13,7 @@ import importlib.util
 import os
 import sys
 import time
+import faulthandler
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +21,43 @@ import numpy as np
 here = os.path.dirname(os.path.abspath(__file__))
 _base_path = os.path.join(here, "hip_motor_torque_replay_runner.py")
 base = None
+
+# Habilitar faulthandler de inmediato para trazar posibles fallos
+faulthandler.enable()
+
+
+def _find_open_serial_devices() -> list[str]:
+    device_prefixes = ("/dev/ttyACM", "/dev/ttyUSB")
+    current_pid = os.getpid()
+    holders = []
+    proc_root = Path("/proc")
+    for proc_dir in proc_root.iterdir():
+        if not proc_dir.name.isdigit():
+            continue
+        pid = int(proc_dir.name)
+        if pid == current_pid:
+            continue
+        fd_dir = proc_dir / "fd"
+        try:
+            fds = list(fd_dir.iterdir())
+        except (FileNotFoundError, PermissionError):
+            continue
+        seen_devices = set()
+        for fd in fds:
+            try:
+                target = os.readlink(fd)
+            except (FileNotFoundError, PermissionError, OSError):
+                continue
+            if target.startswith(device_prefixes):
+                seen_devices.add(target)
+        if not seen_devices:
+            continue
+        try:
+            cmdline = (proc_dir / "cmdline").read_text(encoding="utf-8", errors="replace").replace("\x00", " ").strip()
+        except (FileNotFoundError, PermissionError, OSError):
+            cmdline = ""
+        holders.append(f"pid={pid} devices={sorted(seen_devices)} cmd='{cmdline or '?'}'")
+    return holders
 
 
 def _load_base_module():
@@ -93,6 +131,14 @@ class PyCandleTorqueReplayMotorInterface:
         self.motor_ids = [348, 349]
 
         baud = self._resolve_baud_constant(self._baud_label)
+
+        holders = _find_open_serial_devices()
+        if holders:
+            raise RuntimeError(
+                "Hay otro proceso usando un dispositivo serie CANdle. "
+                "Cierra primero candle_ros2_node/otros runners y vuelve a probar:\n  "
+                + "\n  ".join(holders)
+            )
         self.candle = pyCandle.Candle(baud, self._fdcan_enabled)
 
         ids = list(self.candle.ping())
