@@ -1,5 +1,5 @@
 #!/usr/bin/env python3 python hip_motor_torque_replay_runner_pycandle.py --source-csv /ruta/al/hip_tracking_telemetry.csv --motor-id 11 --apply-torque
-from __future__ import annotations
+from __future__ import annotations 
 
 import argparse
 import csv
@@ -33,11 +33,10 @@ class Ros2MotorInterface:
 
     def __init__(
         self,
-        motor_id: int,
         joint_state_topic: str,
         command_topic: str,
         verbose: bool,
-    ) -> None:
+    ) -> None: 
         try:
             import rclpy
             from rclpy.node import Node
@@ -51,7 +50,7 @@ class Ros2MotorInterface:
         self._node_cls = Node
         self._joint_state_msg_cls = JointState
         self._verbose = verbose
-        self.motor_id = int(motor_id)
+        self.motor_ids = [348, 349]
 
         # Prefer candle_ros2 MotionCommand, fallback to rl_interfaces MotionCommand
         motion_cmd_cls = None
@@ -71,9 +70,9 @@ class Ros2MotorInterface:
         self._joint_state_topic = joint_state_topic
         self._command_topic = command_topic
 
-        self.current_pos: Optional[float] = None
-        self.current_vel: Optional[float] = None
-        self.current_effort: Optional[float] = None
+        self.current_pos: dict[int, Optional[float]] = {mid: None for mid in self.motor_ids}
+        self.current_vel: dict[int, float] = {mid: 0.0 for mid in self.motor_ids}
+        self.current_effort: dict[int, float] = {mid: 0.0 for mid in self.motor_ids}
         self.last_state_ts: float = 0.0
 
         self._rclpy.init(args=None)
@@ -93,26 +92,21 @@ class Ros2MotorInterface:
             )
 
     def _on_joint_state(self, msg) -> None:
-        # Expected name format from MD80 stream: "Joint <id>"
-        target_name = f"Joint {self.motor_id}"
+        for mid in self.motor_ids:
+            # Expected name format from MD80 stream: "Joint <id>"
+            target_name = f"Joint {mid}"
 
-        idx = None
-        if getattr(msg, "name", None):
-            for i, n in enumerate(msg.name):
-                if n == target_name:
-                    idx = i
-                    break
+            idx = None
+            if getattr(msg, "name", None):
+                for i, n in enumerate(msg.name):
+                    if n == target_name:
+                        idx = i
+                        break
 
-        # Fallback if only one motor is present and name is unavailable/unexpected
-        if idx is None:
-            if len(msg.position) == 1:
-                idx = 0
-            else:
-                return
-
-        self.current_pos = float(msg.position[idx]) if idx < len(msg.position) else None
-        self.current_vel = float(msg.velocity[idx]) if idx < len(msg.velocity) else 0.0
-        self.current_effort = float(msg.effort[idx]) if idx < len(msg.effort) else 0.0
+            if idx is not None:
+                self.current_pos[mid] = float(msg.position[idx]) if idx < len(msg.position) else None
+                self.current_vel[mid] = float(msg.velocity[idx]) if idx < len(msg.velocity) else 0.0
+                self.current_effort[mid] = float(msg.effort[idx]) if idx < len(msg.effort) else 0.0
         self.last_state_ts = time.time()
 
     def spin_once(self, timeout_s: float = 0.0) -> None:
@@ -122,21 +116,21 @@ class Ros2MotorInterface:
         t0 = time.time()
         while time.time() - t0 <= timeout_s:
             self.spin_once(timeout_s=0.05)
-            if self.current_pos is not None:
+            if all(v is not None for v in self.current_pos.values()):
                 return True
         return False
 
-    def publish_torque(self, torque_nm: float) -> None:
+    def publish_torque(self, torque_l: float, torque_r: float) -> None:
         msg = self._motion_cmd_cls()
-        msg.drive_ids = [self.motor_id]
-        msg.target_position = [0.0]
-        msg.target_velocity = [0.0]
-        msg.target_torque = [float(torque_nm)]
+        msg.drive_ids = self.motor_ids
+        msg.target_position = [0.0, 0.0]
+        msg.target_velocity = [0.0, 0.0]
+        msg.target_torque = [float(torque_l), float(torque_r)]
         self.pub.publish(msg)
 
     def close(self) -> None:
         try:
-            self.publish_torque(0.0)
+            self.publish_torque(0.0, 0.0)
         except Exception:
             pass
         try:
@@ -148,8 +142,10 @@ class Ros2MotorInterface:
 @dataclass
 class SourceReplay:
     time_s: np.ndarray
-    q_des_rad: np.ndarray
-    torque_nm: np.ndarray
+    q_des_l_rad: np.ndarray
+    q_des_r_rad: np.ndarray
+    torque_l_nm: np.ndarray
+    torque_r_nm: np.ndarray
 
 
 def _parse_float(text: str) -> float:
@@ -169,7 +165,7 @@ def _resolve_column(columns: Sequence[str], explicit: str, candidates: Sequence[
     raise ValueError(f"No se pudo inferir la columna de {kind} en {list(columns)}")
 
 
-def _load_source_csv(csv_path: str, source_hip: str) -> SourceReplay:
+def _load_source_csv(csv_path: str) -> SourceReplay:
     if not os.path.isfile(csv_path):
         raise FileNotFoundError(f"No existe el CSV fuente: {csv_path}")
 
@@ -179,45 +175,68 @@ def _load_source_csv(csv_path: str, source_hip: str) -> SourceReplay:
             raise ValueError(f"El CSV fuente '{csv_path}' no tiene cabecera.")
 
         time_col = _resolve_column(reader.fieldnames, "time_s", ["time_s", "t", "time"], "tiempo")
-        q_col = _resolve_column(
+        ql_col = _resolve_column(
             reader.fieldnames,
-            f"target_{source_hip}_rad",
-            [f"target_{source_hip}_rad", f"{source_hip}_target_rad", f"q_des_{source_hip}_rad"],
-            "posición objetivo",
+            "target_left_rad",
+            ["target_left_rad", "left_target_rad", "q_des_left_rad"],
+            "posición objetivo L",
         )
-        tau_col = _resolve_column(
+        qr_col = _resolve_column(
             reader.fieldnames,
-            f"torque_{source_hip}_nm",
-            [f"torque_{source_hip}_nm", f"tau_{source_hip}_nm", f"{source_hip}_torque_nm"],
-            "torque",
+            "target_right_rad",
+            ["target_right_rad", "right_target_rad", "q_des_right_rad"],
+            "posición objetivo R",
         )
+        taul_col = _resolve_column(
+            reader.fieldnames,
+            "torque_left_nm",
+            ["torque_left_nm", "tau_left_nm", "left_torque_nm"],
+            "torque L",
+        )
+        taur_col = _resolve_column(
+            reader.fieldnames,
+            "torque_right_nm",
+            ["torque_right_nm", "tau_right_nm", "right_torque_nm"],
+            "torque R",
+        )
+
 
         time_values = []
-        q_values = []
-        tau_values = []
+        ql_values = []
+        qr_values = []
+        taul_values = []
+        taur_values = []
         for row in reader:
             time_values.append(_parse_float(row[time_col]))
-            q_values.append(_parse_float(row[q_col]))
-            tau_values.append(_parse_float(row[tau_col]))
+            ql_values.append(_parse_float(row[ql_col]))
+            qr_values.append(_parse_float(row[qr_col]))
+            taul_values.append(_parse_float(row[taul_col]))
+            taur_values.append(_parse_float(row[taur_col]))
 
     time_arr = np.asarray(time_values, dtype=np.float64)
-    q_arr = np.asarray(q_values, dtype=np.float64)
-    tau_arr = np.asarray(tau_values, dtype=np.float64)
+    ql_arr = np.asarray(ql_values, dtype=np.float64)
+    qr_arr = np.asarray(qr_values, dtype=np.float64)
+    taul_arr = np.asarray(taul_values, dtype=np.float64)
+    taur_arr = np.asarray(taur_values, dtype=np.float64)
 
     order = np.argsort(time_arr)
     time_arr = time_arr[order]
-    q_arr = q_arr[order]
-    tau_arr = tau_arr[order]
+    ql_arr = ql_arr[order]
+    qr_arr = qr_arr[order]
+    taul_arr = taul_arr[order]
+    taur_arr = taur_arr[order]
 
     time_arr = time_arr - float(time_arr[0])
-    return SourceReplay(time_s=time_arr, q_des_rad=q_arr, torque_nm=tau_arr)
+    return SourceReplay(time_s=time_arr, q_des_l_rad=ql_arr, q_des_r_rad=qr_arr, torque_l_nm=taul_arr, torque_r_nm=taur_arr)
 
 
-def _sample_source(source: SourceReplay, t_s: float) -> Tuple[float, float]:
+def _sample_source(source: SourceReplay, t_s: float) -> Tuple[float, float, float, float]:
     t = float(np.clip(t_s, float(source.time_s[0]), float(source.time_s[-1])))
-    q_des = float(np.interp(t, source.time_s, source.q_des_rad))
-    tau = float(np.interp(t, source.time_s, source.torque_nm))
-    return q_des, tau
+    q_des_l = float(np.interp(t, source.time_s, source.q_des_l_rad))
+    q_des_r = float(np.interp(t, source.time_s, source.q_des_r_rad))
+    tau_l = float(np.interp(t, source.time_s, source.torque_l_nm))
+    tau_r = float(np.interp(t, source.time_s, source.torque_r_nm))
+    return q_des_l, q_des_r, tau_l, tau_r
 
 
 def _write_run_config_txt(run_dir: str, args: argparse.Namespace, source: SourceReplay) -> str:
@@ -238,7 +257,7 @@ def _write_run_config_txt(run_dir: str, args: argparse.Namespace, source: Source
             "",
             f"source_duration_s: {float(source.time_s[-1]):.6f}",
             f"source_samples: {int(source.time_s.size)}", 
-            f"source_hip: {args.source_hip}",
+            "source_hip: dual (left+right)",
         ]
     )
 
@@ -248,32 +267,50 @@ def _write_run_config_txt(run_dir: str, args: argparse.Namespace, source: Source
     return config_path
 
 
-def _save_csv(csv_path: str, time_s: np.ndarray, q: np.ndarray, qd: np.ndarray, q_des: np.ndarray, torque: np.ndarray) -> None:
+def _save_csv(csv_path: str, time_s: np.ndarray, ql: np.ndarray, qr: np.ndarray, qdl: np.ndarray, qdr: np.ndarray, ql_des: np.ndarray, qr_des: np.ndarray, taul: np.ndarray, taur: np.ndarray) -> None:
     os.makedirs(os.path.dirname(csv_path) or ".", exist_ok=True)
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["time_s", "q_rad", "qd_rad_s", "q_des_rad", "applied_torque_nm"])
+        writer.writerow(["time_s", "q_l_rad", "q_r_rad", "qd_l_rad_s", "qd_r_rad_s", "q_des_l_rad", "q_des_r_rad", "applied_torque_l_nm", "applied_torque_r_nm"])
         for i in range(time_s.size):
-            writer.writerow([float(time_s[i]), float(q[i]), float(qd[i]), float(q_des[i]), float(torque[i])])
+            writer.writerow([
+                float(time_s[i]), float(ql[i]), float(qr[i]),
+                float(qdl[i]), float(qdr[i]), float(ql_des[i]), float(qr_des[i]),
+                float(taul[i]), float(taur[i])
+            ])
 
 
-def _plot_run(plot_path: str, show_plot: bool, time_s: np.ndarray, q: np.ndarray, q_des: np.ndarray, torque: np.ndarray) -> None:
+def _plot_run(plot_path: str, show_plot: bool, time_s: np.ndarray, ql: np.ndarray, qr: np.ndarray, ql_des: np.ndarray, qr_des: np.ndarray, taul: np.ndarray, taur: np.ndarray) -> None:
     os.makedirs(os.path.dirname(plot_path) or ".", exist_ok=True)
-    fig, axes = plt.subplots(2, 1, figsize=(13, 7.2), sharex=True)
+    fig, axes = plt.subplots(2, 2, figsize=(16, 9), sharex=True)
 
-    axes[0].plot(time_s, q_des, color="#d62728", linewidth=1.8, label="Objetivo")
-    axes[0].plot(time_s, q, color="#1f5c9a", linewidth=2.0, label="Real")
-    axes[0].set_ylabel("Ángulo [rad]")
-    axes[0].set_title("Motor real: seguimiento de la referencia generada en simulación")
-    axes[0].grid(True, alpha=0.25)
-    axes[0].legend(loc="best", frameon=False)
+    # Panel superior izquierda: Posición Cadera Izquierda
+    axes[0, 0].plot(time_s, ql_des, color="#d62728", linewidth=1.5, label="Objetivo L")
+    axes[0, 0].plot(time_s, ql, color="#1f5c9a", linewidth=2.0, label="Real L (348)")
+    axes[0, 0].set_ylabel("Ángulo [rad]")
+    axes[0, 0].set_title("Seguimiento Cadera Izquierda")
+    axes[0, 0].grid(True, alpha=0.25)
+    axes[0, 0].legend(loc="best", frameon=False)
+    axes[0, 0].invert_yaxis()
 
-    axes[1].plot(time_s, torque, color="#2b8a3e", linewidth=1.8, label="Torque aplicado")
-    axes[1].set_ylabel("Torque [Nm]")
-    axes[1].set_xlabel("Tiempo [s]")
-    axes[1].set_title("Torque aplicado al motor")
-    axes[1].grid(True, alpha=0.25)
-    axes[1].legend(loc="best", frameon=False)
+    # Panel superior derecha: Posición Cadera Derecha
+    axes[0, 1].plot(time_s, -qr_des, color="#d62728", linewidth=1.5, label="-Objetivo R")
+    axes[0, 1].plot(time_s, qr, color="#1f5c9a", linewidth=2.0, label="Real R (349)")
+    axes[0, 1].set_title("Seguimiento Cadera Derecha")
+    axes[0, 1].grid(True, alpha=0.25)
+    axes[0, 1].legend(loc="best", frameon=False)
+
+    # Panel inferior izquierda: Torque Izquierdo
+    axes[1, 0].plot(time_s, taul, color="#2b8a3e", linewidth=1.8, label="Torque L")
+    axes[1, 0].set_ylabel("Torque [Nm]")
+    axes[1, 0].set_xlabel("Tiempo [s]")
+    axes[1, 0].grid(True, alpha=0.25)
+    axes[1, 0].invert_yaxis()
+
+    # Panel inferior derecha: Torque Derecho
+    axes[1, 1].plot(time_s, taur, color="#2b8a3e", linewidth=1.8, label="Torque R")
+    axes[1, 1].set_xlabel("Tiempo [s]")
+    axes[1, 1].grid(True, alpha=0.25)
 
     plt.tight_layout()
     plt.savefig(plot_path, dpi=220)
@@ -326,17 +363,9 @@ def main() -> int:
     if not args.source_csv.strip():
         raise ValueError("--source-csv es obligatorio para este runner de replay.")
 
-    source = _load_source_csv(args.source_csv.strip(), args.source_hip)
+    source = _load_source_csv(args.source_csv.strip())
 
-    if args.motor_id is None:
-        try:
-            motor_id_str = input("Enter motor ID (default=308): ").strip()
-            args.motor_id = int(motor_id_str) if motor_id_str else 308
-        except ValueError:
-            print("Motor ID inválido. Usando 308.")
-            args.motor_id = 308
-
-    run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_id={args.motor_id}"
+    run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_dual_replay"
     repo_root = Path(__file__).resolve().parents[2]
     run_dir = args.run_dir.strip() if args.run_dir else str(repo_root / "outputs" / "mimo" / "new_workflow" / "runner" / run_tag)
     os.makedirs(run_dir, exist_ok=True)
@@ -349,18 +378,16 @@ def main() -> int:
         backend_cls.configure_from_args(args)
 
     interface = backend_cls(
-        motor_id=args.motor_id,
         joint_state_topic=args.joint_state_topic,
         command_topic=args.command_topic,
         verbose=bool(args.verbose),
     )
 
-    if not interface.wait_for_state(timeout_s=5.0):
+    if not interface.wait_for_state(timeout_s=10.0):
         interface.close()
-        raise RuntimeError("No se recibió estado del motor. Revisa el bus y los topics.")
+        raise RuntimeError("No se recibió estado de los motores 348/349. Revisa el bus.")
 
-    initial_pos = float(interface.current_pos if interface.current_pos is not None else 0.0)
-    print(f"Posición inicial: {initial_pos:+.6f} rad")
+    print("Motores listos. Iniciando replay de torque dual.")
     print(f"Replay de torque desde {args.source_csv} usando la cadera {args.source_hip}")
 
     try:
@@ -374,10 +401,14 @@ def main() -> int:
     next_tick = t0
 
     t_hist = []
-    q_hist = []
-    qd_hist = []
-    q_des_hist = []
-    torque_hist = []
+    ql_hist = []
+    qr_hist = []
+    qdl_hist = []
+    qdr_hist = []
+    ql_des_hist = []
+    qr_des_hist = []
+    taul_hist = []
+    taur_hist = []
 
     try:
         while True:
@@ -387,29 +418,37 @@ def main() -> int:
                 break
 
             interface.spin_once(timeout_s=0.0)
-            q_des, torque = _sample_source(source, t_rel)
+            q_des_l, q_des_r, tau_l, tau_r = _sample_source(source, t_rel)
+            
             if args.safe_torque_limit is not None:
-                torque = float(np.clip(torque, -float(args.safe_torque_limit), float(args.safe_torque_limit)))
+                tau_l = float(np.clip(tau_l, -float(args.safe_torque_limit), float(args.safe_torque_limit)))
+                tau_r = float(np.clip(tau_r, -float(args.safe_torque_limit), float(args.safe_torque_limit)))
 
-            q = float(interface.current_pos if interface.current_pos is not None else 0.0)
-            qd = float(interface.current_vel if interface.current_vel is not None else 0.0)
+            ql = float(interface.current_pos[348] if interface.current_pos[348] is not None else 0.0)
+            qr = float(interface.current_pos[349] if interface.current_pos[349] is not None else 0.0)
+            qdl = float(interface.current_vel[348])
+            qdr = float(interface.current_vel[349])
 
-            command_torque = float(torque) if args.apply_torque else 0.0
-            interface.publish_torque(command_torque)
+            command_torque_l = float(tau_l) if args.apply_torque else 0.0
+            # Inversión de polaridad para el motor derecho (ID 349): Positive torque = forward
+            command_torque_r = float(-tau_r) if args.apply_torque else 0.0
+            
+            interface.publish_torque(command_torque_l, command_torque_r)
 
             t_hist.append(t_rel)
-            q_hist.append(q)
-            qd_hist.append(qd)
-            q_des_hist.append(q_des)
-            torque_hist.append(command_torque)
+            ql_hist.append(ql); qr_hist.append(qr)
+            qdl_hist.append(qdl); qdr_hist.append(qdr)
+            ql_des_hist.append(q_des_l); qr_des_hist.append(q_des_r)
+            taul_hist.append(command_torque_l); taur_hist.append(command_torque_r)
 
             if len(t_hist) < 5 or len(t_hist) % 100 == 0:
                 print(
-                    "t={:.3f}s q={:+.3f} q_des={:+.3f} torque={:+.3f}".format(
+                    "t={:.3f}s L(348): q={:+.3f} tau={:+.3f} | R(349): q={:+.3f} tau={:+.3f}".format(
                         t_rel,
-                        q,
-                        q_des,
-                        command_torque,
+                        ql,
+                        command_torque_l,
+                        qr,
+                        command_torque_r,
                     )
                 )
 
@@ -422,23 +461,23 @@ def main() -> int:
         print("Replay interrumpido por el usuario")
     finally:
         try:
-            interface.publish_torque(0.0)
+            interface.publish_torque(0.0, 0.0)
         except Exception:
             pass
         interface.close()
 
     t_arr = np.asarray(t_hist, dtype=np.float64)
-    q_arr = np.asarray(q_hist, dtype=np.float64)
-    qd_arr = np.asarray(qd_hist, dtype=np.float64)
-    q_des_arr = np.asarray(q_des_hist, dtype=np.float64)
-    torque_arr = np.asarray(torque_hist, dtype=np.float64)
+    ql_arr = np.asarray(ql_hist, dtype=np.float64); qr_arr = np.asarray(qr_hist, dtype=np.float64)
+    qdl_arr = np.asarray(qdl_hist, dtype=np.float64); qdr_arr = np.asarray(qdr_hist, dtype=np.float64)
+    ql_des_arr = np.asarray(ql_des_hist, dtype=np.float64); qr_des_arr = np.asarray(qr_des_hist, dtype=np.float64)
+    taul_arr = np.asarray(taul_hist, dtype=np.float64); taur_arr = np.asarray(taur_hist, dtype=np.float64)
 
     if args.save_csv:
-        _save_csv(csv_path, t_arr, q_arr, qd_arr, q_des_arr, torque_arr)
+        _save_csv(csv_path, t_arr, ql_arr, qr_arr, qdl_arr, qdr_arr, ql_des_arr, qr_des_arr, taul_arr, taur_arr)
         print(f"CSV guardado en {csv_path}")
 
     if args.save_plot:
-        _plot_run(plot_path, bool(args.show_plot), t_arr, q_arr, q_des_arr, torque_arr)
+        _plot_run(plot_path, bool(args.show_plot), t_arr, ql_arr, qr_arr, ql_des_arr, qr_des_arr, taul_arr, taur_arr)
         print(f"Imagen guardada en {plot_path}")
 
     meta_path = os.path.join(run_dir, "simulation_info.txt")
@@ -447,14 +486,14 @@ def main() -> int:
         f.write(f"source_csv: {args.source_csv}\n")
         f.write(f"source_hip: {args.source_hip}\n")
         f.write(f"interface: {args.interface}\n")
-        f.write(f"motor_id: {args.motor_id}\n")
+        f.write("motor_ids: [348, 349]\n")
         f.write(f"rate_hz: {args.rate_hz}\n")
         f.write(f"apply_torque: {args.apply_torque}\n")
         f.write(f"safe_torque_limit: {args.safe_torque_limit}\n")
         f.write(f"n_samples: {len(t_arr)}\n")
         if len(t_arr) > 0:
             f.write(f"duration_s: {float(t_arr[-1]):.6f}\n")
-        f.write("csv_columns: time_s, q_rad, qd_rad_s, q_des_rad, applied_torque_nm\n")
+        f.write("csv_columns: time_s, q_l_rad, q_r_rad, qd_l_rad_s, qd_r_rad_s, q_des_l_rad, q_des_r_rad, applied_torque_l_nm, applied_torque_r_nm\n")
         f.write("plot_top: q_des_rad vs q_rad\n")
         f.write("plot_bottom: applied_torque_nm\n")
         f.write(f"csv_path: {csv_path}\n")

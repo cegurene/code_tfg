@@ -79,7 +79,7 @@ class PyCandleTorqueReplayMotorInterface:
         cls._add_all_drives = bool(args.pycandle_add_all_drives)
         cls._strict_id_match = bool(args.pycandle_strict_id_match)
 
-    def __init__(self, motor_id: int, joint_state_topic: str, command_topic: str, verbose: bool) -> None:
+    def __init__(self, joint_state_topic: str, command_topic: str, verbose: bool) -> None:
         del joint_state_topic
         del command_topic
 
@@ -90,7 +90,7 @@ class PyCandleTorqueReplayMotorInterface:
 
         self._pycandle = pyCandle
         self._verbose = bool(verbose)
-        self.motor_id = int(motor_id)
+        self.motor_ids = [348, 349]
 
         baud = self._resolve_baud_constant(self._baud_label)
         self.candle = pyCandle.Candle(baud, self._fdcan_enabled)
@@ -99,7 +99,7 @@ class PyCandleTorqueReplayMotorInterface:
         if not ids:
             raise RuntimeError("No se detectaron drives en el bus CAN (pyCandle ping vacio).")
 
-        ids_to_add = ids if self._add_all_drives else [self.motor_id]
+        ids_to_add = ids if self._add_all_drives else self.motor_ids
         for drive_id in ids_to_add:
             if drive_id in ids:
                 self.candle.addMd80(drive_id)
@@ -107,26 +107,28 @@ class PyCandleTorqueReplayMotorInterface:
         if not getattr(self.candle, "md80s", None):
             raise RuntimeError("No se pudo inicializar ningun MD80 en pyCandle.")
 
-        self.drive = self._select_drive(self.motor_id, ids)
-
-        self.candle.controlMd80Mode(self.drive, pyCandle.RAW_TORQUE)
-        self.candle.controlMd80Enable(self.drive, True)
-        if self._max_torque_nm is not None:
-            self.drive.setMaxTorque(float(self._max_torque_nm))
+        self.drives = {}
+        for mid in self.motor_ids:
+            drive = self._select_drive(mid, ids)
+            self.drives[mid] = drive
+            self.candle.controlMd80Mode(drive, pyCandle.RAW_TORQUE)
+            self.candle.controlMd80Enable(drive, True)
+            if self._max_torque_nm is not None:
+                drive.setMaxTorque(float(self._max_torque_nm))
 
         self.candle.begin()
 
-        self.current_pos = None
-        self.current_vel = None
-        self.current_effort = None
+        self.current_pos = {mid: None for mid in self.motor_ids}
+        self.current_vel = {mid: 0.0 for mid in self.motor_ids}
+        self.current_effort = {mid: 0.0 for mid in self.motor_ids}
         self.last_state_ts = 0.0
 
         self._poll_state()
 
         if self._verbose:
             print(
-                "pyCandle replay interface ready: motor_id={} baud={} fdcan={} max_torque={}Nm".format(
-                    self.motor_id,
+                "pyCandle replay interface ready: motor_ids={} baud={} fdcan={} max_torque={}Nm".format(
+                    self.motor_ids,
                     self._baud_label,
                     self._fdcan_enabled,
                     "n/a" if self._max_torque_nm is None else f"{self._max_torque_nm:.3f}",
@@ -190,9 +192,11 @@ class PyCandleTorqueReplayMotorInterface:
 
     def _poll_state(self) -> None:
         try:
-            self.current_pos = float(self.drive.getPosition())
-            self.current_vel = float(self.drive.getVelocity())
-            self.current_effort = float(self.drive.getTorque())
+            for mid in self.motor_ids:
+                drive = self.drives[mid]
+                self.current_pos[mid] = float(drive.getPosition())
+                self.current_vel[mid] = float(drive.getVelocity())
+                self.current_effort[mid] = float(drive.getTorque())
             self.last_state_ts = time.time()
         except Exception:
             pass
@@ -206,16 +210,19 @@ class PyCandleTorqueReplayMotorInterface:
         t0 = time.time()
         while time.time() - t0 <= timeout_s:
             self.spin_once(timeout_s=0.01)
-            if self.current_pos is not None:
+            if all(v is not None for v in self.current_pos.values()):
                 return True
         return False
 
-    def publish_torque(self, torque_nm: float) -> None:
-        self.drive.setTargetTorque(float(torque_nm))
+    def publish_torque(self, torque_l: float, torque_r: float) -> None:
+        if 348 in self.drives:
+            self.drives[348].setTargetTorque(float(torque_l))
+        if 349 in self.drives:
+            self.drives[349].setTargetTorque(float(torque_r))
 
     def close(self) -> None:
         try:
-            self.publish_torque(0.0)
+            self.publish_torque(0.0, 0.0)
             time.sleep(0.02)
         except Exception:
             pass
@@ -223,10 +230,11 @@ class PyCandleTorqueReplayMotorInterface:
             self.candle.end()
         except Exception:
             pass
-        try:
-            self.candle.controlMd80Enable(self.drive, False)
-        except Exception:
-            pass
+        for drive in self.drives.values():
+            try:
+                self.candle.controlMd80Enable(drive, False)
+            except Exception:
+                pass
 
 def main() -> int:
     args = _build_parser().parse_args()
@@ -234,41 +242,30 @@ def main() -> int:
     if not args.source_csv.strip():
         raise ValueError("--source-csv es obligatorio para este runner de replay.")
 
-    if args.motor_id is None:
-        try:
-            motor_id_str = input("Enter motor ID (default=308): ").strip()
-            args.motor_id = int(motor_id_str) if motor_id_str else 308
-        except ValueError:
-            print("Motor ID inválido. Usando 308.")
-            args.motor_id = 308
-
     PyCandleTorqueReplayMotorInterface.configure_from_args(args)
 
     interface = PyCandleTorqueReplayMotorInterface(
-        motor_id=args.motor_id,
         joint_state_topic=args.joint_state_topic,
         command_topic=args.command_topic,
         verbose=bool(args.verbose),
     )
 
-    if not interface.wait_for_state(timeout_s=5.0):
+    if not interface.wait_for_state(timeout_s=10.0):
         interface.close()
-        raise RuntimeError("No se recibió estado del motor. Revisa el bus y los topics.")
+        raise RuntimeError("No se recibió estado de los motores 348/349. Revisa el bus.")
 
     base_mod = _load_base_module()
-    source = base_mod._load_source_csv(args.source_csv.strip(), args.source_hip)
+    source = base_mod._load_source_csv(args.source_csv.strip())
 
-    run_tag = base_mod.dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + f"_id={args.motor_id}"
+    run_tag = base_mod.dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + "_dual_pycandle_replay"
     repo_root = Path(__file__).resolve().parents[2]
     run_dir = args.run_dir.strip() if args.run_dir else str(repo_root / "outputs" / "mimo" / "new_workflow" /"runner" / run_tag)
     os.makedirs(run_dir, exist_ok=True)
 
     csv_path = args.csv_path.strip() if args.csv_path else os.path.join(run_dir, "telemetry.csv")
     plot_path = args.plot_path.strip() if args.plot_path else os.path.join(run_dir, "timeseries.png")
-
-    initial_pos = float(interface.current_pos if interface.current_pos is not None else 0.0)
-
-    print(f"Posición inicial: {initial_pos:+.6f} rad")
+    
+    print("Motores listos. Iniciando replay de torque dual con pyCandle.")
     print(f"Replay de torque desde {args.source_csv} usando la cadera {args.source_hip}")
 
     try:
@@ -282,10 +279,14 @@ def main() -> int:
     next_tick = t0
 
     t_hist = []
-    q_hist = []
-    qd_hist = []
-    q_des_hist = []
-    torque_hist = []
+    ql_hist = []
+    qr_hist = []
+    qdl_hist = []
+    qdr_hist = []
+    ql_des_hist = []
+    qr_des_hist = []
+    taul_hist = []
+    taur_hist = []
 
     try:
         while True:
@@ -295,29 +296,37 @@ def main() -> int:
                 break
 
             interface.spin_once(timeout_s=0.0)
-            q_des, torque = base_mod._sample_source(source, t_rel)
+            q_des_l, q_des_r, tau_l, tau_r = base_mod._sample_source(source, t_rel)
+            
             if args.safe_torque_limit is not None:
-                torque = float(np.clip(torque, -float(args.safe_torque_limit), float(args.safe_torque_limit)))
+                tau_l = float(np.clip(tau_l, -float(args.safe_torque_limit), float(args.safe_torque_limit)))
+                tau_r = float(np.clip(tau_r, -float(args.safe_torque_limit), float(args.safe_torque_limit)))
 
-            command_torque = float(torque) if args.apply_torque else 0.0
-            interface.publish_torque(command_torque)
+            ql = float(interface.current_pos[348] if interface.current_pos[348] is not None else 0.0)
+            qr = float(interface.current_pos[349] if interface.current_pos[349] is not None else 0.0)
+            qdl = float(interface.current_vel[348])
+            qdr = float(interface.current_vel[349])
 
-            q = float(interface.current_pos if interface.current_pos is not None else 0.0)
-            qd = float(interface.current_vel if interface.current_vel is not None else 0.0)
+            command_torque_l = float(tau_l) if args.apply_torque else 0.0
+            # Inversión de polaridad para el motor derecho (ID 349): Positive torque = forward
+            command_torque_r = float(-tau_r) if args.apply_torque else 0.0
+            
+            interface.publish_torque(command_torque_l, command_torque_r)
 
             t_hist.append(t_rel)
-            q_hist.append(q)
-            qd_hist.append(qd)
-            q_des_hist.append(q_des)
-            torque_hist.append(command_torque)
+            ql_hist.append(ql); qr_hist.append(qr)
+            qdl_hist.append(qdl); qdr_hist.append(qdr)
+            ql_des_hist.append(q_des_l); qr_des_hist.append(q_des_r)
+            taul_hist.append(command_torque_l); taur_hist.append(command_torque_r)
 
             if len(t_hist) < 5 or len(t_hist) % 100 == 0:
                 print(
-                    "t={:.3f}s q={:+.3f} q_des={:+.3f} torque={:+.3f}".format(
+                    "t={:.3f}s L(348): q={:+.3f} tau={:+.3f} | R(349): q={:+.3f} tau={:+.3f}".format(
                         t_rel,
-                        q,
-                        q_des,
-                        command_torque,
+                        ql,
+                        command_torque_l,
+                        qr,
+                        command_torque_r,
                     ),
                     flush=True,
                 )
@@ -332,23 +341,23 @@ def main() -> int:
         print("Replay interrumpido por el usuario")
     finally:
         try:
-            interface.publish_torque(0.0)
+            interface.publish_torque(0.0, 0.0)
         except Exception:
             pass
         interface.close()
 
     t_arr = np.asarray(t_hist, dtype=np.float64)
-    q_arr = np.asarray(q_hist, dtype=np.float64)
-    qd_arr = np.asarray(qd_hist, dtype=np.float64)
-    q_des_arr = np.asarray(q_des_hist, dtype=np.float64)
-    torque_arr = np.asarray(torque_hist, dtype=np.float64)
+    ql_arr = np.asarray(ql_hist, dtype=np.float64); qr_arr = np.asarray(qr_hist, dtype=np.float64)
+    qdl_arr = np.asarray(qdl_hist, dtype=np.float64); qdr_arr = np.asarray(qdr_hist, dtype=np.float64)
+    ql_des_arr = np.asarray(ql_des_hist, dtype=np.float64); qr_des_arr = np.asarray(qr_des_hist, dtype=np.float64)
+    taul_arr = np.asarray(taul_hist, dtype=np.float64); taur_arr = np.asarray(taur_hist, dtype=np.float64)
 
     if args.save_csv:
-        base_mod._save_csv(csv_path, t_arr, q_arr, qd_arr, q_des_arr, torque_arr)
+        base_mod._save_csv(csv_path, t_arr, ql_arr, qr_arr, qdl_arr, qdr_arr, ql_des_arr, qr_des_arr, taul_arr, taur_arr)
         print(f"CSV guardado en {csv_path}")
 
     if args.save_plot:
-        base_mod._plot_run(plot_path, bool(args.show_plot), t_arr, q_arr, q_des_arr, torque_arr)
+        base_mod._plot_run(plot_path, bool(args.show_plot), t_arr, ql_arr, qr_arr, ql_des_arr, qr_des_arr, taul_arr, taur_arr)
         print(f"Imagen guardada en {plot_path}")
 
     meta_path = os.path.join(run_dir, "simulation_info.txt")
@@ -357,13 +366,14 @@ def main() -> int:
         f.write(f"source_csv: {args.source_csv}\n")
         f.write(f"source_hip: {args.source_hip}\n")
         f.write(f"interface: pycandle\n")
-        f.write(f"motor_id: {args.motor_id}\n")
+        f.write("motor_ids: [348, 349]\n")
         f.write(f"rate_hz: {args.rate_hz}\n")
         f.write(f"apply_torque: {args.apply_torque}\n")
         f.write(f"safe_torque_limit: {args.safe_torque_limit}\n")
         f.write(f"n_samples: {len(t_arr)}\n")
         if len(t_arr) > 0:
             f.write(f"duration_s: {float(t_arr[-1]):.6f}\n")
+        f.write("csv_columns: time_s, q_l_rad, q_r_rad, qd_l_rad_s, qd_r_rad_s, q_des_l_rad, q_des_r_rad, applied_torque_l_nm, applied_torque_r_nm\n")
         f.write(f"csv_path: {csv_path}\n")
         f.write(f"plot_path: {plot_path}\n")
 
