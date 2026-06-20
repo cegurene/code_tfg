@@ -119,7 +119,7 @@ def _collect_row(env_unwrapped, timestep: int, episode: int, info: dict) -> dict
         return float(e.model.dof_velocity_array()[position])
 
     def exo_torque(position):
-        return float(e.model.dofs()[position].actuator_torque())
+        return float(e.model.actuators()[position].input())
 
     # ------------------------------------------------------------------
     # Targets y PID: llegan en el dict `info` devuelto por env.step()
@@ -176,8 +176,8 @@ def _collect_row(env_unwrapped, timestep: int, episode: int, info: dict) -> dict
         "muscle_force_glut_l":      muscle_force(2),
         "muscle_force_glut_r":      muscle_force(0),
         # Torque motor exo (índices en dofs())
-        "motor_torque_l": exo_torque(3),
-        "motor_torque_r": exo_torque(1),
+        "motor_torque_l": exo_torque(5),
+        "motor_torque_r": exo_torque(4),
         # Salida PID (índices en info["pid_r"])
         "pid_output_l":   info.get("pid_r", None),
         "pid_output_r":   info.get("pid_l", None),
@@ -331,12 +331,6 @@ def parse_args():
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed for reproducibility")
     parser.add_argument("--checkpoint-freq", type=int, default=25_000, help="Checkpoint frequency in env steps")
-    parser.add_argument(
-        "--write-freq",
-        type=int,
-        default=None,
-        help="Deprecated alias for --checkpoint-freq",
-    )
     parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--buffer-size", type=int, default=300_000)
     parser.add_argument("--learning-starts", type=int, default=10_000)
@@ -370,9 +364,6 @@ def parse_args():
 
 def main():
     args = parse_args()
-
-    if args.write_freq is not None:
-        args.checkpoint_freq = args.write_freq
 
     args.log_dir.mkdir(parents=True, exist_ok=True)
 

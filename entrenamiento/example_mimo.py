@@ -64,7 +64,7 @@ while True:
         muscle_activations_history.append(activations)
 
     # check if done
-    if done or (ep_steps >= 500):
+    if done or (ep_steps >= 50):
         env.unwrapped.write_now()
         print(
             f"Episode {0} ending; steps={ep_steps}; reward={reward:0.3f}; \

@@ -54,7 +54,7 @@ from std_srvs.srv import SetBool
 from ..impedance_config_py import ImpedanceConfig, find_config_file
 from ..mplGraphTV import TorqueVelocityGraph
 
-from .gui_completa_data import Ui_MainWindow  # Qt Designer generated class for la nueva UI
+from .gui_completa_data import Ui_MainWindow  # Qt Designer generated class for the new UI
 
 from pathlib import Path
 

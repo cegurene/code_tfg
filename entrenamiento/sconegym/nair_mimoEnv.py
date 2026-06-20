@@ -376,6 +376,14 @@ class MimoGym(NairSconeGymEnv):
         #muscle_activations = self.model.muscle_activation_array()
         #print("muscle_activations", muscle_activations)
         # glut_max_r, iliopsoas_r, glut_max_l, iliopsoas_l
+        """print("\n")
+        print("\n")
+        print("\n")
+        print([m.name() for m in self.model.actuators()])
+        print([m.input() for m in self.model.actuators()])
+        print("\n")
+        print("\n")
+        print("\n")"""
         for i in range(len(self.model.muscles())):
             #print(f"muscle {i}:", self.model.muscles()[i].name())
             pass
