@@ -333,7 +333,7 @@ def parse_args():
     parser.add_argument("--checkpoint-freq", type=int, default=25_000, help="Checkpoint frequency in env steps")
     parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--buffer-size", type=int, default=300_000)
-    parser.add_argument("--learning-starts", type=int, default=10_000)
+    parser.add_argument("--learning-starts", type=int, default=25_000)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--gamma", type=float, default=0.99)
     parser.add_argument("--tau", type=float, default=0.005)
