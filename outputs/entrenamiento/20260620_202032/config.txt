@@ -6,3 +6,5 @@ velocity_tracking: 0.9
 torque_cost: 0.0
 torque_smoothness: 0.1
 muscle_activation_cost: 0.9
+
+vel_act
