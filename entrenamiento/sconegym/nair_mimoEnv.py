@@ -18,11 +18,11 @@ import collections
 
 
 DEFAULT_RW_DICT = {
-    "position_tracking": 0.3,
-    "velocity_tracking": 1.0,
+    "position_tracking": 0.03,
+    "velocity_tracking": 0.01,
     "torque_cost": 0.0,
-    "torque_smoothness": 0.7,
-    "muscle_activation_cost": 0.5
+    "torque_smoothness": 5,
+    "muscle_activation_cost": 0.05
 }
 
 

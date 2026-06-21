@@ -1,0 +1,10 @@
+Reward weights
+====================
+
+position_tracking: 0.15
+velocity_tracking: 0.1
+torque_cost: 0.0
+torque_smoothness: 5
+muscle_activation_cost: 0.5
+
+SMO_act

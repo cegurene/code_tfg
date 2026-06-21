@@ -1,2 +1,2 @@
 conda activate scone
-python training.py --total-timesteps 150000 --checkpoint-freq 35000 --save-scone-episodes --progress-bar
+python training.py --total-timesteps 200000 --checkpoint-freq 45000 --save-scone-episodes --progress-bar
