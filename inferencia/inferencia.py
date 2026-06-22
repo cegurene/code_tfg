@@ -206,9 +206,9 @@ def _load_source_csv(csv_path: str, period_s: float = 2.1) -> SourceReplay:
 
     return SourceReplay(
         time_s=time_arr, 
-        q_des_l_rad=ql_arr, 
+        q_des_l_rad=-ql_arr, 
         q_des_r_rad=qr_arr, 
-        qd_des_l_rad_s=qdl_arr, 
+        qd_des_l_rad_s=-qdl_arr, 
         qd_des_r_rad_s=qdr_arr
     )
 
@@ -250,24 +250,80 @@ def _write_run_config_txt(run_dir: str, args: argparse.Namespace, source: Source
     return config_path
 
 
-def _save_csv(csv_path: str, time_s: np.ndarray, ql: np.ndarray, qr: np.ndarray, qdl: np.ndarray, qdr: np.ndarray, ql_des: np.ndarray, qr_des: np.ndarray, taul_pid: np.ndarray, taur_pid: np.ndarray, taul_agent: np.ndarray, taur_agent: np.ndarray, taul_combined: np.ndarray, taur_combined: np.ndarray) -> None:
+def _save_csv(
+    csv_path: str,
+    time_s: np.ndarray,
+    ql: np.ndarray,
+    qr: np.ndarray,
+    qdl: np.ndarray,
+    qdr: np.ndarray,
+    ql_des: np.ndarray,
+    qr_des: np.ndarray,
+    taul_pid: np.ndarray,
+    taur_pid: np.ndarray,
+    taul_agent: np.ndarray,
+    taur_agent: np.ndarray,
+    taul_combined: np.ndarray,
+    taur_combined: np.ndarray,
+) -> None:
+
     os.makedirs(os.path.dirname(csv_path) or ".", exist_ok=True)
+
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
+
         writer.writerow([
-            "time_s", "q_l_rad", "q_r_rad", "qd_l_rad_s", "qd_r_rad_s",
-            "q_des_l_rad", "q_des_r_rad",
-            "pid_torque_l_nm", "pid_torque_r_nm",
-            "agent_torque_l_nm", "agent_torque_r_nm",
-            "combined_torque_l_nm", "combined_torque_r_nm"
+            "time_s",
+
+            "hip_pos_target_r",
+            "hip_pos_target_l",
+
+            "hip_pos_r",
+            "hip_pos_l",
+
+            "hip_vel_target_r",
+            "hip_vel_target_l",
+
+            "hip_vel_r",
+            "hip_vel_l",
+
+            "pid_output_r",
+            "pid_output_l",
+
+            "agent_torque_r",
+            "agent_torque_l",
+
+            "combined_torque_r",
+            "combined_torque_l",
         ])
+
+        qd_des_r = np.gradient(qr_des, time_s)
+        qd_des_l = np.gradient(ql_des, time_s)
+
         for i in range(time_s.size):
             writer.writerow([
-                float(time_s[i]), float(ql[i]), float(qr[i]),
-                float(qdl[i]), float(qdr[i]), float(ql_des[i]), float(qr_des[i]),
-                float(taul_pid[i]), float(taur_pid[i]),
-                float(taul_agent[i]), float(taur_agent[i]),
-                float(taul_combined[i]), float(taur_combined[i])
+                float(time_s[i]),
+
+                float(qr_des[i]),
+                float(ql_des[i]),
+
+                float(qr[i]),
+                float(ql[i]),
+
+                float(qd_des_r[i]),
+                float(qd_des_l[i]),
+
+                float(qdr[i]),
+                float(qdl[i]),
+
+                float(taur_pid[i]),
+                float(taul_pid[i]),
+
+                float(taur_agent[i]),
+                float(taul_agent[i]),
+
+                float(taur_combined[i]),
+                float(taul_combined[i]),
             ])
 
 
@@ -669,7 +725,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--joint-state-topic", default="/md80/joint_states", help="Topic ROS2.")
     p.add_argument("--command-topic", default="/md80/motion_command", help="Topic ROS2.")
     p.add_argument("--rate-hz", type=float, default=100.0, help="Frecuencia del bucle de control en Hz.")
-    p.add_argument("--kp", type=float, default=0.9, help="Ganancia proporcional PID.")
+    p.add_argument("--kp", type=float, default=3.0, help="Ganancia proporcional PID.")
     p.add_argument("--ki", type=float, default=0.0, help="Ganancia integral PID.")
     p.add_argument("--kd", type=float, default=0.0, help="Ganancia derivativa PID.")
     p.add_argument("--period", type=float, default=2.1, help="Duración en segundos de un ciclo.")
@@ -852,12 +908,13 @@ def main() -> int:
             # Enviar estado a PyTorch
             parent_conn.send(sac_observation)
             
-            # Esperar respuesta (Es síncrono, pero libre del GIL de Python principal)
+            # Esperar respuesta
             agent_action = parent_conn.recv()
             # =======================================================
 
-            agent_torque_r = float(agent_action[0, 0])
-            agent_torque_l = float(agent_action[0, 1])
+            # Torque calculado por agente
+            agent_torque_r = 0#float(agent_action[0, 0])
+            agent_torque_l = 0#float(agent_action[0, 1])
             last_agent_action = agent_action[0].copy()
 
             # --- PID ---
@@ -873,8 +930,14 @@ def main() -> int:
             pid_torque_r = kp * error_q_r + ki * integral_error_r + kd * derivative_error_r
             previous_error_r = error_q_r
 
-            combined_torque_r = pid_torque_r + agent_torque_r
-            combined_torque_l = -(pid_torque_l + agent_torque_l)
+            pid_output_l = pid_torque_l
+            pid_output_r = pid_torque_r
+
+            agent_output_l = agent_torque_l
+            agent_output_r = agent_torque_r
+
+            combined_torque_l = pid_output_l + agent_output_l
+            combined_torque_r = pid_output_r + agent_output_r
 
             safe_limit = float(args.safe_torque_limit)
             final_torque_l = float(np.clip(combined_torque_l, -safe_limit, safe_limit))
@@ -883,12 +946,21 @@ def main() -> int:
             interface.publish_torque(final_torque_l, final_torque_r)
 
             t_hist.append(t_rel)
-            ql_hist.append(current_q_l); qr_hist.append(current_q_r)
-            qdl_hist.append(current_qd_l); qdr_hist.append(current_qd_r)
-            ql_des_hist.append(target_q_l); qr_des_hist.append(target_q_r)
-            taul_pid_hist.append(pid_torque_l); taur_pid_hist.append(pid_torque_r)
-            taul_agent_hist.append(-agent_torque_l); taur_agent_hist.append(agent_torque_r)
-            taul_combined_hist.append(final_torque_l); taur_combined_hist.append(final_torque_r)
+            ql_hist.append(current_q_l)
+            qr_hist.append(current_q_r)
+            qdl_hist.append(current_qd_l)
+            qdr_hist.append(current_qd_r)
+            ql_des_hist.append(target_q_l)
+            qr_des_hist.append(target_q_r)
+
+            taul_pid_hist.append(pid_output_l)
+            taur_pid_hist.append(pid_output_r)
+
+            taul_agent_hist.append(agent_output_l)
+            taur_agent_hist.append(agent_output_r)
+
+            taul_combined_hist.append(final_torque_l)
+            taur_combined_hist.append(final_torque_r)
 
             if len(t_hist) < 5 or len(t_hist) % 100 == 0:
                 print(
