@@ -2,10 +2,10 @@ rosbag2_bagfile_information:
   version: 9
   storage_identifier: mcap
   duration:
-    nanoseconds: 17423790541
+    nanoseconds: 20923295853
   starting_time:
-    nanoseconds_since_epoch: 1781692673334631239
-  message_count: 2886
+    nanoseconds_since_epoch: 1782113757833803452
+  message_count: 2970
   topics_with_message_count:
     - topic_metadata:
         name: /md80/velocity_pid_command
@@ -72,7 +72,7 @@ rosbag2_bagfile_information:
               nsec: 854775807
             avoid_ros_namespace_conventions: false
         type_description_hash: RIHS01_a13ee3a330e346c9d87b5aa18d24e11690752bd33a0350f11c5882bc9179260e
-      message_count: 1730
+      message_count: 2081
     - topic_metadata:
         name: /md80/impedance_command
         type: candle_ros2/msg/ImpedanceCommand
@@ -116,7 +116,7 @@ rosbag2_bagfile_information:
               nsec: 854775807
             avoid_ros_namespace_conventions: false
         type_description_hash: RIHS01_f158c0ae91c315f522fbe3c8fd3b3a77e4fde0f7a05c2d303ae165c4a0edf8bd
-      message_count: 316
+      message_count: 354
     - topic_metadata:
         name: /parameter_events
         type: rcl_interfaces/msg/ParameterEvent
@@ -182,17 +182,17 @@ rosbag2_bagfile_information:
               nsec: 854775807
             avoid_ros_namespace_conventions: false
         type_description_hash: RIHS01_e28ce254ca8abc06abf92773b74602cdbf116ed34fbaf294fb9f81da9f318eac
-      message_count: 840
+      message_count: 535
   compression_format: ""
   compression_mode: ""
   relative_file_paths:
-    - 17-6_prueba_001_0.mcap
+    - sinuoidal1_001_0.mcap
   files:
-    - path: 17-6_prueba_001_0.mcap
+    - path: sinuoidal1_001_0.mcap
       starting_time:
-        nanoseconds_since_epoch: 1781692673334631239
+        nanoseconds_since_epoch: 1782113757833803452
       duration:
-        nanoseconds: 17423790541
-      message_count: 2886
+        nanoseconds: 20923295853
+      message_count: 2970
   custom_data: ~
   ros_distro: jazzy

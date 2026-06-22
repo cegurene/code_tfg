@@ -204,9 +204,9 @@ class MiVentana(QMainWindow):
         self.ui.control_set.pressed.connect(self.set_control)
         if hasattr(self.ui, 'cadera_der_setpoint_slider_manual'):
             self.ui.cadera_der_setpoint_slider_manual.valueChanged.connect(self.slider_setpoint)
-        self.ui.carpeta_guardado_btn.pressed.connect(self.select_folder_to_save)
-        self.ui.save_play_button.pressed.connect(self.start_recording)
-        self.ui.save_stop_button.pressed.connect(self.stop_recording)
+        self.ui.carpeta_guardado_btn_2.pressed.connect(self.select_folder_to_save)
+        self.ui.save_play_button_2.pressed.connect(self.start_recording)
+        self.ui.save_stop_button_2.pressed.connect(self.stop_recording)
         self.ui.add_motors_btn.pressed.connect(self.add_motors)
 
         # Connect MIMo
@@ -2401,15 +2401,16 @@ class MiVentana(QMainWindow):
     # Starts rosbag recording with auto-numbered filename in the chosen folder.
     def start_recording(self):
         print("start_recording")
+        self.ui.estado_record_data_2.setText("Grabando datos...")
         if self.rosbag_process is None:
-            filename = self.ui.nombre_archivo_guardado.text()
-            if self.ui.nombre_carpeta_guardado.text() == "":
+            filename = self.ui.nombre_archivo_guardado_2.text()
+            if self.ui.nombre_carpeta_guardado_2.text() == "":
                 path = "/home/carlos/Escritorio/assistive_exo/src/rosbags/rosbags"
             else:
-                path = self.ui.nombre_carpeta_guardado.text()
+                path = self.ui.nombre_carpeta_guardado_2.text()
 
             if filename[-1] != "_":
-                filename = self.ui.nombre_archivo_guardado.text() + "_"
+                filename = self.ui.nombre_archivo_guardado_2.text() + "_"
 
             file_number = self.get_next_rosbag_number(path, filename)
             self.rosbag_process = QProcess(self)
@@ -2423,6 +2424,7 @@ class MiVentana(QMainWindow):
     # Stop rosbag recording
     def stop_recording(self):
         print("stop_recording")
+        self.ui.estado_record_data_2.setText("Apagado")
         if self.rosbag_process is not None:
             self.rosbag_process.terminate()
             self.rosbag_process = None
@@ -2527,7 +2529,7 @@ class MiVentana(QMainWindow):
     def select_folder_to_save(self):
         folder_path = QFileDialog.getExistingDirectory(self, "Select folder", "")
         if folder_path:
-            self.ui.nombre_carpeta_guardado.setText(folder_path)
+            self.ui.nombre_carpeta_guardado_2.setText(folder_path)
 
     # Send impedance trajectory command for left motor only
     def send_impedance_trajectory_left(self, state):

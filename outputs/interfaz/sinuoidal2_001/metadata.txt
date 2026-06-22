@@ -1,0 +1,23 @@
+RECORDING_METADATA
+timestamp: 2026-06-22T09:37:57
+control_mode: IMPEDANCE
+IMPEDANCE_GAINS:
+  left_kp: 0.8
+  left_kd: 0.4
+  left_offset: 0.0
+  left_max_output: 4.0
+  -------------
+  right_kp: 0.8
+  right_kd: 0.4
+  right_offset: 0.0
+  right_max_output: 4.0
+IMPEDANCE_SINE:
+  left_amp_deg: 100.0
+  left_freq_hz: 0.6
+  left_offset_deg: 0.0
+  left_cycles: 5.0
+  -------------
+  right_amp_deg: -100.0
+  right_freq_hz: 0.6
+  right_offset_deg: 0.0
+  right_cycles: 5.0

@@ -490,116 +490,6 @@
       </layout>
      </widget>
     </widget>
-    <widget class="QWidget" name="archivo_setpoint">
-     <attribute name="title">
-      <string>Archivo</string>
-     </attribute>
-     <widget class="QWidget" name="layoutWidget">
-      <property name="geometry">
-       <rect>
-        <x>140</x>
-        <y>70</y>
-        <width>351</width>
-        <height>251</height>
-       </rect>
-      </property>
-      <layout class="QGridLayout" name="gridLayout">
-       <item row="7" column="0">
-        <widget class="QLabel" name="estado_record_data">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Apagado</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLineEdit" name="nombre_archivo_guardado">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>11</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Nombre del archivo:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_7">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>20</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Guardado datos</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLineEdit" name="nombre_carpeta_guardado">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QPushButton" name="save_play_button">
-           <property name="text">
-            <string>Play</string>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../../../../../../../../../../Downloads/play.png</normaloff>
-             <normalon>../../../../../../../../../../../../Downloads/play.png</normalon>../../../../../../../../../../../../Downloads/play.png</iconset>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="save_stop_button">
-           <property name="text">
-            <string>Stop</string>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../../../../../../../../../../../Downloads/stop.png</normaloff>../../../../../../../../../../../../Downloads/stop.png</iconset>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="2" column="0">
-        <widget class="QPushButton" name="carpeta_guardado_btn">
-         <property name="text">
-          <string>Seleccionar carpeta</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </widget>
     <widget class="QWidget" name="mimo_page">
      <attribute name="title">
       <string>MIMO</string>
@@ -1481,6 +1371,111 @@ del script &quot;nair_mimoEnv.py&quot;</string>
     <property name="text">
      <string>Habilitar</string>
     </property>
+   </widget>
+   <widget class="QWidget" name="layoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>990</x>
+      <y>560</y>
+      <width>261</width>
+      <height>251</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_2">
+     <item row="7" column="0">
+      <widget class="QLabel" name="estado_record_data_2">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Apagado</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLineEdit" name="nombre_archivo_guardado_2">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_22">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>11</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Nombre del archivo:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_24">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>20</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Guardado datos</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLineEdit" name="nombre_carpeta_guardado_2">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0">
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QPushButton" name="save_play_button_2">
+         <property name="text">
+          <string>Play</string>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../../../../../../../../../../../../../../Downloads/play.png</normaloff>
+           <normalon>../../../../../../../../../../../../../../Downloads/play.png</normalon>../../../../../../../../../../../../../../Downloads/play.png</iconset>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="save_stop_button_2">
+         <property name="text">
+          <string>Stop</string>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../../../../../../../../../../../../../../Downloads/stop.png</normaloff>../../../../../../../../../../../../../../Downloads/stop.png</iconset>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="2" column="0">
+      <widget class="QPushButton" name="carpeta_guardado_btn_2">
+       <property name="text">
+        <string>Seleccionar carpeta</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
