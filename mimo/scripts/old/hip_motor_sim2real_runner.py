@@ -1790,7 +1790,7 @@ def _run_real_mode(args, gains: PIDGains, virtual_actuators: Sequence[VirtualAct
     next_tick = t0
     cmd_prev = 0.0
 
-    run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S_act")
     default_run_name = f"{run_tag}"
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
     run_dir = args.run_dir.strip() if args.run_dir else os.path.join(repo_root, "outputs", "mimo", "old_workflow", "real", default_run_name)
