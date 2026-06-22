@@ -1,0 +1,108 @@
+================================================================================
+MIMo TRAJECTORY TRACKING SIMULATION - SUMMARY
+================================================================================
+
+EXECUTION INFO
+--------------------------------------------------------------------------------
+timestamp: 2026-06-22T10:23:41
+command: visualiza_standup_trajectory_tracking.py --mass-scale 3 --kp 0.7 --ki 0.3 --kd 0 --joint-stiffness-scale 1.6
+run_dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-06-22_10-23-28
+
+ENVIRONMENT SETUP
+--------------------------------------------------------------------------------
+env_id: MIMoVelocityLowerBody-v0
+reference_csv: /home/carlos/Escritorio/TFG/code_tfg/mimo/scripts/healthy_hip_reference.csv
+reference_period_s: 2.1
+reference_points: 100
+
+TRAJECTORY CONFIGURATION
+--------------------------------------------------------------------------------
+trajectory_phase_offset_pct: 0.0
+left_phase_offset_pct: 50.0
+target_cycles: 5.0
+initial_phase_right: 37.1%
+left_start_delay_s: 1.572s
+
+CONTROL PARAMETERS
+--------------------------------------------------------------------------------
+kp: 0.7
+ki: 0.3
+kd: 0.0
+safe_torque_limit: 10.0
+
+MODEL PARAMETERS (SCALING FACTORS)
+--------------------------------------------------------------------------------
+mass_scale: 3.0
+joint_stiffness_scale: 1.6
+joint_damping_scale: 1.0
+joint_frictionloss_scale: 1.0
+joint_armature_scale: 1.0
+
+SIMULATION RESULTS
+--------------------------------------------------------------------------------
+n_steps: 1050
+sim_dt: 0.010000000s
+duration_s: 10.500000s
+csv_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-06-22_10-23-28/hip_tracking_telemetry.csv
+plot_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/mimo/new_workflow/simulator/2026-06-22_10-23-28/hip_tracking_summary.png
+
+MUSCLE MODEL PARAMETERS
+--------------------------------------------------------------------------------
+muscle_tau: 0.02
+lce_min: 0.75
+lce_max: 1.05
+lmin: 0.5
+lmax: 1.6
+fvmax: 1.2
+fpmax: 1.3
+fmax_scale: 1.0
+
+ACTUATOR NAMES
+--------------------------------------------------------------------------------
+0: act:right_hip_flex
+1: act:left_hip_flex
+2: act:right_hip_abduction
+3: act:right_hip_rotation
+4: act:left_hip_abduction
+5: act:left_hip_rotation
+
+ALL ARGUMENTS
+--------------------------------------------------------------------------------
+csv_path:           (default)
+cycles: 5.0          (default)
+env: MIMoVelocityLowerBody-v0          (default)
+ext_muscles: 10.0,1.2,0.25,0.8,3.14,0.30;8.0,1.2,0.18,1.4,3.94,0.25;6.0,1.2,0.15,0.5,2.54,0.20          (default)
+flex_muscles: 10.0,1.2,0.25,0.8,0.0,0.30;8.0,1.2,0.18,1.4,0.8,0.25;6.0,1.2,0.15,0.5,-0.6,0.20          (default)
+fmax_scale: 1.0          (default)
+fpmax: 1.3          (default)
+fvmax: 1.2          (default)
+joint_armature_scale: 1.0          (default)
+joint_damping_scale: 1.0          (default)
+joint_frictionloss_scale: 1.0          (default)
+joint_stiffness_scale: 1.6          (default: 1.0)
+kd: 0.0          (default: 0.08)
+ki: 0.3          (default: 0.15)
+kp: 0.7          (default: 1.8)
+lce_max: 1.05          (default)
+lce_min: 0.75          (default)
+left_phase_offset_pct: 50.0          (default)
+lmax: 1.6          (default)
+lmin: 0.5          (default)
+mass_scale: 3.0          (default: 1.0)
+muscle_tau: 0.02          (default)
+pid_activation_scale: 1.0          (default)
+plot_fps: 60.0          (default)
+plot_path:           (default)
+reference_angle_column: hip_angle_mean          (default)
+reference_angle_sign: -1.0          (default)
+reference_angle_unit: deg          (default)
+reference_csv: /home/carlos/Escritorio/TFG/code_tfg/mimo/scripts/healthy_hip_reference.csv          (default)
+reference_phase_column: percent_cycle          (default)
+render: True          (default)
+run_dir:           (default)
+safe_torque_limit: 10.0          (default)
+seed: 7          (default)
+show_plot: False          (default)
+trajectory_period_s: 2.1          (default: 1.063)
+trajectory_phase_offset_pct: 0.0          (default)
+trajectory_scale: 1.0          (default)

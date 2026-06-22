@@ -1452,7 +1452,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # Real mode
     p.add_argument("--rate-hz", type=float, default=100.0, help="Control loop rate in real mode")
     p.add_argument("--duration-s", type=float, default=30.0, help="Real run duration")
-    p.add_argument("--motor-id", type=int, default=None, help="Motor ID (prompted if not provided in real mode)")
+    p.add_argument("--motor-id", type=int, default=349, help="Motor ID (prompted if not provided in real mode)")
     p.add_argument("--joint-state-topic", default="/md80/joint_states")
     p.add_argument("--command-topic", default="/md80/motion_command")
     p.add_argument("--safe-torque-limit", type=float, default=None, help="Optional hard torque limit in Nm")
@@ -1791,9 +1791,9 @@ def _run_real_mode(args, gains: PIDGains, virtual_actuators: Sequence[VirtualAct
     cmd_prev = 0.0
 
     run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    default_run_name = f"{run_tag}_id={args.motor_id}"
+    default_run_name = f"{run_tag}"
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-    run_dir = args.run_dir.strip() if args.run_dir else os.path.join(repo_root, "outputs", "mimo", "old_workflow", "hip_motor_real", default_run_name)
+    run_dir = args.run_dir.strip() if args.run_dir else os.path.join(repo_root, "outputs", "mimo", "old_workflow", "real", default_run_name)
     os.makedirs(run_dir, exist_ok=True)
 
     csv_path = args.csv_path.strip() if args.csv_path else os.path.join(run_dir, "telemetry.csv")
