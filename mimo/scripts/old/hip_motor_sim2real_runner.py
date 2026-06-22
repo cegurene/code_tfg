@@ -21,10 +21,10 @@ SIM:
   python mimoEnv/hip_motor_sim2real_runner.py --mode sim --steps 4000 --no-render
 
 REAL (dry run, no torque applied):
-  python mimoEnv/hip_motor_sim2real_runner.py --mode real --rate-hz 100 --motor-id 308
+  python mimoEnv/hip_motor_sim2real_runner.py --mode real --rate-hz 100 --motor-id 349
 
 REAL (apply torque, carefully):
-  python mimoEnv/hip_motor_sim2real_runner.py --mode real --motor-id 308 \
+  python mimoEnv/hip_motor_sim2real_runner.py --mode real --motor-id 349 \
       --apply-torque --safe-torque-limit 0.5 --rate-hz 100
 """
 
@@ -1686,11 +1686,11 @@ def _run_real_mode(args, gains: PIDGains, virtual_actuators: Sequence[VirtualAct
     # Interactive motor_id prompt if not provided
     if args.motor_id is None:
         try:
-            motor_id_str = input("Enter motor ID (default=308): ").strip()
-            args.motor_id = int(motor_id_str) if motor_id_str else 308
+            motor_id_str = input("Enter motor ID (default=349): ").strip()
+            args.motor_id = int(motor_id_str) if motor_id_str else 349
         except ValueError:
-            print("Invalid motor ID. Using default: 308")
-            args.motor_id = 308
+            print("Invalid motor ID. Using default: 349")
+            args.motor_id = 349
     
     dt_s = 1.0 / max(1e-3, float(args.rate_hz))
     max_steps = int(max(1.0, args.duration_s) * args.rate_hz)
