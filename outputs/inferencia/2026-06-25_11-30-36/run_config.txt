@@ -1,0 +1,36 @@
+timestamp: 2026-06-25T11:30:36
+command: inferencia.py --agent-path /home/carlos/Escritorio/TFG/code_tfg/outputs/entrenamiento/20260625_100913/sac_mimo_final.zip --num-cycles 2
+
+# effective arguments
+agent_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/entrenamiento/20260625_100913/sac_mimo_final.zip
+command_topic: /md80/motion_command
+csv_path: 
+diagnose_pycandle_only: False
+interface: pycandle
+joint_state_topic: /md80/joint_states
+kd: 0.1
+ki: 0.0
+kp: 2
+num_cycles: 2.0
+period: 2.1
+phase_offset_l: 50.0
+plot_path: 
+probe_pycandle_constructors: False
+pycandle_add_all_drives: True
+pycandle_baud: 1M
+pycandle_constructor: verbose
+pycandle_fdcan: True
+pycandle_max_torque: 1.0
+pycandle_strict_id_match: False
+rate_hz: 100.0
+run_dir: 
+safe_torque_limit: 0.4
+save_csv: True
+save_plot: True
+show_plot: False
+source_csv: /home/carlos/Escritorio/TFG/code_tfg/mimo/scripts/healthy_hip_reference.csv
+verbose: True
+
+source_duration_s: 2.100000
+source_samples: 101
+source_hip: dual (left+right)

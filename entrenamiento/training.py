@@ -18,10 +18,11 @@ if __package__ in (None, ""):
 import gymnasium as gym
 import sconegym  # noqa: F401  # Registers the custom envs.
 from stable_baselines3 import SAC
-from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
+from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.utils import set_random_seed
 
+from collections import deque
 
 ENV_ID = "nair_gait_h0404MimoExo-v0"
 
@@ -273,9 +274,10 @@ class EpisodeDataCallback(BaseCallback):
 
         # ---- Guardar CSV si toca checkpoint ----
         if (
-            self.num_timesteps > 0
+            (self.num_timesteps > 0
             and self.num_timesteps % self.checkpoint_freq == 0
-            and self.num_timesteps != self._last_checkpoint_step
+            and self.num_timesteps != self._last_checkpoint_step)
+            or (self.num_timesteps == 5000 and self._last_checkpoint_step == 0)
         ):
             self._save_episode_csv()
             self._last_checkpoint_step = self.num_timesteps
@@ -361,6 +363,66 @@ def parse_args():
     )
     return parser.parse_known_args()[0]
 
+class ObservationNoiseWrapper(gym.ObservationWrapper):
+    """
+    Añade ruido gaussiano a las observaciones.
+    """
+
+    def __init__(self, env, noise_std=0.01):
+        super().__init__(env)
+        self.noise_std = noise_std
+
+    def observation(self, obs):
+        noise = np.random.normal(
+            loc=0.0,
+            scale=self.noise_std,
+            size=np.shape(obs)
+        )
+
+        return obs + noise
+
+
+class ActionDelayWrapper(gym.Wrapper):
+    """
+    Introduce un retardo aleatorio de acciones
+    al comienzo de cada episodio.
+    """
+
+    def __init__(self, env, max_delay_steps=3):
+        super().__init__(env)
+
+        self.max_delay_steps = max_delay_steps
+        self.delay_steps = 0
+        self.buffer = deque()
+
+    def reset(self, **kwargs):
+
+        obs, info = self.env.reset(**kwargs)
+
+        self.delay_steps = np.random.randint(
+            0,
+            self.max_delay_steps + 1
+        )
+
+        self.buffer.clear()
+
+        zero_action = np.zeros(
+            self.action_space.shape,
+            dtype=np.float32
+        )
+
+        for _ in range(self.delay_steps + 1):
+            self.buffer.append(zero_action.copy())
+
+        return obs, info
+
+    def step(self, action):
+
+        self.buffer.append(np.array(action))
+
+        delayed_action = self.buffer.popleft()
+
+        return self.env.step(delayed_action)
 
 def main():
     args = parse_args()
@@ -372,6 +434,17 @@ def main():
         sys.argv = [sys.argv[0]]
 
         env = gym.make(ENV_ID)
+
+        # Domain randomization
+        env = ObservationNoiseWrapper(
+            env,
+            noise_std=0.005
+        )
+
+        env = ActionDelayWrapper(
+            env,
+            max_delay_steps=1
+        )
 
         launch_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -500,13 +573,6 @@ def main():
             seed=args.seed,
         )
 
-        checkpoint_cb = CheckpointCallback(
-            save_freq=args.checkpoint_freq,
-            save_path=run_dir,
-            name_prefix="sac_mimo",
-            save_replay_buffer=args.save_replay_buffer,
-        )
-
         # Callback que guarda el CSV biomecánico en cada checkpoint
         episode_data_cb = EpisodeDataCallback(
             run_dir=run_dir,
@@ -518,10 +584,11 @@ def main():
             total_timesteps=args.total_timesteps,
             log_interval=4,
             progress_bar=args.progress_bar,
-            callback=[checkpoint_cb, episode_data_cb],
+            callback=[episode_data_cb],
         )
 
         model.save(str(run_dir / "sac_mimo_final"))
+
         if args.save_replay_buffer:
             model.save_replay_buffer(str(run_dir / "sac_mimo_final_replay_buffer"))
 

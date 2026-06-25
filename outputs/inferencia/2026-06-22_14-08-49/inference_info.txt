@@ -1,0 +1,10 @@
+run_dir: /home/carlos/Escritorio/TFG/code_tfg/outputs/inferencia/2026-06-22_14-08-49
+agent_path: /home/carlos/Escritorio/TFG/code_tfg/outputs/entrenamiento/20260622_125621/sac_mimo_final.zip
+source_csv: /home/carlos/Escritorio/TFG/code_tfg/mimo/scripts/healthy_hip_reference.csv
+interface: pycandle
+motor_ids: [348, 349]
+rate_hz: 100.0
+kp: 4.3
+ki: 0.0
+kd: 0.0
+safe_torque_limit: 10.0

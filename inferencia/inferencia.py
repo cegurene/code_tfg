@@ -42,8 +42,8 @@ _PYCANDLE_IMPORT_ERROR: Optional[BaseException] = None
 # PROCESO AISLADO PARA LA INTELIGENCIA ARTIFICIAL (SAC)
 # =============================================================================
 def proceso_agente_sac(pipe_conn, agent_path: Path, verbose: bool) -> None:
-    """
-    Este proceso se encarga ÚNICAMENTE de ejecutar PyTorch y stable_baselines3.
+    """Este proceso se encarga ÚNICAMENTE de ejecutar PyTorch y stable_baselines3.
+
     Aísla las dependencias C++ de PyTorch del entorno de pyCandle para evitar SegFaults.
     """
     # Forzar a PyTorch a usar un solo hilo para evitar overhead y conflictos
@@ -62,8 +62,8 @@ def proceso_agente_sac(pipe_conn, agent_path: Path, verbose: bool) -> None:
         print(f"[IA] ERROR crítico al cargar el agente: {exc}", flush=True)
         pipe_conn.send("ERROR")
         return
-
-    # Bucle infinito de inferencia
+        
+    # Bucle infinito de inferencia síncrona
     while True:
         try:
             # Esperamos bloqueados hasta que el controlador PID nos mande la observación
@@ -75,6 +75,7 @@ def proceso_agente_sac(pipe_conn, agent_path: Path, verbose: bool) -> None:
                 
             # Predecir torque
             action, _ = model.predict(obs, deterministic=True)
+            print("ACTION:", action)
             
             # Enviar resultado de vuelta
             pipe_conn.send(action)
@@ -121,8 +122,8 @@ def _find_open_serial_devices() -> list[str]:
         holders.append(f"pid={pid} devices={sorted(seen_devices)} cmd='{cmdline or '?'}'")
     return holders
 
-# --- Helper functions and classes from hip_motor_torque_replay_runner.py ---
 
+# --- Helper functions and classes from hip_motor_torque_replay_runner.py ---
 @dataclass
 class SourceReplay:
     time_s: np.ndarray
@@ -152,12 +153,10 @@ def _resolve_column(columns: Sequence[str], explicit: str, candidates: Sequence[
 def _load_source_csv(csv_path: str, period_s: float = 2.1) -> SourceReplay:
     if not os.path.isfile(csv_path):
         raise FileNotFoundError(f"No existe el CSV fuente: {csv_path}")
-
     with open(csv_path, "r", newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         if reader.fieldnames is None:
             raise ValueError(f"El CSV fuente '{csv_path}' no tiene cabecera.")
-
         time_col = _resolve_column(reader.fieldnames, "", ["time_s", "t", "time", "percent_cycle", "percent"], "tiempo")
         if not time_col:
             raise ValueError(f"No se encontró columna de tiempo en {csv_path}")
@@ -174,22 +173,18 @@ def _load_source_csv(csv_path: str, period_s: float = 2.1) -> SourceReplay:
             ["target_right_rad", "right_target_rad", "q_des_right_rad", "hip_pos_target_r", "hip_angle_mean"],
             "posición objetivo R",
         )
-
         time_raw = []
         q_raw = []
         ql_raw = []
         is_percent = "percent" in time_col.lower()
         is_degrees = "angle" in qr_col.lower() or "mean" in qr_col.lower()
-
         for row in reader:
             time_raw.append(_parse_float(row[time_col]))
             q_raw.append(_parse_float(row[qr_col]))
             if ql_col:
                 ql_raw.append(_parse_float(row[ql_col]))
-
     time_arr = np.array(time_raw)
     qr_arr = np.deg2rad(np.array(q_raw)) if is_degrees else np.array(q_raw)
-
     if is_percent:
         time_arr = (time_arr / 100.0) * period_s
         if not ql_raw:
@@ -200,10 +195,8 @@ def _load_source_csv(csv_path: str, period_s: float = 2.1) -> SourceReplay:
     else:
         ql_arr = np.array(ql_raw) if ql_raw else qr_arr.copy()
         time_arr = time_arr - time_arr[0]
-
     qdl_arr = np.gradient(ql_arr, time_arr)
     qdr_arr = np.gradient(qr_arr, time_arr)
-
     return SourceReplay(
         time_s=time_arr, 
         q_des_l_rad=-ql_arr, 
@@ -225,7 +218,6 @@ def _sample_source(source: SourceReplay, t_s: float) -> Tuple[float, float, floa
 def _write_run_config_txt(run_dir: str, args: argparse.Namespace, source: SourceReplay) -> str:
     os.makedirs(run_dir, exist_ok=True)
     config_path = os.path.join(run_dir, "run_config.txt")
-
     lines = [
         f"timestamp: {dt.datetime.now().isoformat(timespec='seconds')}",
         f"command: {' '.join(sys.argv)}",
@@ -234,7 +226,6 @@ def _write_run_config_txt(run_dir: str, args: argparse.Namespace, source: Source
     ]
     for key in sorted(vars(args).keys()):
         lines.append(f"{key}: {getattr(args, key)}")
-
     lines.extend(
         [
             "",
@@ -243,126 +234,126 @@ def _write_run_config_txt(run_dir: str, args: argparse.Namespace, source: Source
             "source_hip: dual (left+right)",
         ]
     )
-
     with open(config_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
-
     return config_path
 
 
 def _save_csv(
     csv_path: str,
     time_s: np.ndarray,
-    ql: np.ndarray,
-    qr: np.ndarray,
-    qdl: np.ndarray,
-    qdr: np.ndarray,
-    ql_des: np.ndarray,
-    qr_des: np.ndarray,
-    taul_pid: np.ndarray,
-    taur_pid: np.ndarray,
-    taul_agent: np.ndarray,
-    taur_agent: np.ndarray,
-    taul_combined: np.ndarray,
-    taur_combined: np.ndarray,
+    q_real_l: np.ndarray,
+    q_real_r: np.ndarray,
+    qd_real_l: np.ndarray,
+    qd_real_r: np.ndarray,
+    q_des_l: np.ndarray,
+    q_des_r: np.ndarray,
+    tau_pid_l: np.ndarray,
+    tau_pid_r: np.ndarray,
+    tau_agent_l: np.ndarray,
+    tau_agent_r: np.ndarray,
+    tau_combined_l: np.ndarray,
+    tau_combined_r: np.ndarray,
 ) -> None:
-
     os.makedirs(os.path.dirname(csv_path) or ".", exist_ok=True)
-
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-
         writer.writerow([
             "time_s",
-
             "hip_pos_target_r",
             "hip_pos_target_l",
-
             "hip_pos_r",
             "hip_pos_l",
-
             "hip_vel_target_r",
             "hip_vel_target_l",
-
             "hip_vel_r",
             "hip_vel_l",
-
             "pid_output_r",
             "pid_output_l",
-
             "agent_torque_r",
             "agent_torque_l",
-
             "combined_torque_r",
             "combined_torque_l",
         ])
-
-        qd_des_r = np.gradient(qr_des, time_s)
-        qd_des_l = np.gradient(ql_des, time_s)
-
+        # Calcular derivadas de velocidad deseadas usando gradientes numéricos
+        qd_des_r = np.gradient(q_des_r, time_s)
+        qd_des_l = np.gradient(q_des_l, time_s)
+        
         for i in range(time_s.size):
             writer.writerow([
                 float(time_s[i]),
-
-                float(qr_des[i]),
-                float(ql_des[i]),
-
-                float(qr[i]),
-                float(ql[i]),
-
+                float(q_des_r[i]),
+                float(q_des_l[i]),
+                float(q_real_r[i]),
+                float(q_real_l[i]),
                 float(qd_des_r[i]),
                 float(qd_des_l[i]),
-
-                float(qdr[i]),
-                float(qdl[i]),
-
-                float(taur_pid[i]),
-                float(taul_pid[i]),
-
-                float(taur_agent[i]),
-                float(taul_agent[i]),
-
-                float(taur_combined[i]),
-                float(taul_combined[i]),
+                float(qd_real_r[i]),
+                float(qd_real_l[i]),
+                float(tau_pid_r[i]),
+                float(tau_pid_l[i]),
+                float(tau_agent_r[i]),
+                float(tau_agent_l[i]),
+                float(tau_combined_r[i]),
+                float(tau_combined_l[i]),
             ])
 
 
-def _plot_run(plot_path: str, show_plot: bool, time_s: np.ndarray, ql: np.ndarray, qr: np.ndarray, ql_des: np.ndarray, qr_des: np.ndarray, taul_pid: np.ndarray, taur_pid: np.ndarray, taul_agent: np.ndarray, taur_agent: np.ndarray, taul_combined: np.ndarray, taur_combined: np.ndarray) -> None:
+def _plot_run(
+    plot_path: str,
+    show_plot: bool,
+    time_s: np.ndarray,
+    q_real_l: np.ndarray,
+    q_real_r: np.ndarray,
+    q_des_l: np.ndarray,
+    q_des_r: np.ndarray,
+    tau_pid_l: np.ndarray,
+    tau_pid_r: np.ndarray,
+    tau_agent_l: np.ndarray,
+    tau_agent_r: np.ndarray,
+    tau_combined_l: np.ndarray,
+    tau_combined_r: np.ndarray,
+) -> None:
     import matplotlib.pyplot as plt
-
     os.makedirs(os.path.dirname(plot_path) or ".", exist_ok=True)
     fig, axes = plt.subplots(2, 2, figsize=(20, 16), sharex=True)
-
-    axes[0, 0].plot(time_s, ql_des, color="#d62728", linewidth=1.5, label="Objetivo L")
-    axes[0, 0].plot(time_s, ql, color="#1f5c9a", linewidth=2.0, label="Real L (348)")
+    
+    # Seguimiento Izquierdo
+    axes[0, 0].plot(time_s, q_des_l, color="#d62728", linewidth=1.5, label="Objetivo L")
+    axes[0, 0].plot(time_s, q_real_l, color="#1f5c9a", linewidth=2.0, label="Real L (348)")
     axes[0, 0].set_ylabel("Ángulo [rad]")
     axes[0, 0].set_title("Seguimiento Cadera Izquierda")
     axes[0, 0].grid(True, alpha=0.25)
     axes[0, 0].legend(loc="best", frameon=False)
-
-    axes[0, 1].plot(time_s, qr_des, color="#d62728", linewidth=1.5, label="Objetivo R")
-    axes[0, 1].plot(time_s, qr, color="#1f5c9a", linewidth=2.0, label="Real R (349)")
+    axes[0, 0].invert_yaxis()  
+    
+    # Seguimiento Derecho
+    axes[0, 1].plot(time_s, q_des_r, color="#d62728", linewidth=1.5, label="Objetivo R")
+    axes[0, 1].plot(time_s, q_real_r, color="#1f5c9a", linewidth=2.0, label="Real R (349)")
     axes[0, 1].set_title("Seguimiento Cadera Derecha")
     axes[0, 1].grid(True, alpha=0.25)
     axes[0, 1].legend(loc="best", frameon=False)
-
-    axes[1, 0].plot(time_s, taul_agent, color="#8a2be2", linewidth=1.5, label="Torque Agente L")
-    axes[1, 0].plot(time_s, taul_combined, color="#ff7f0e", linewidth=2.0, label="Torque Combinado L")
-    axes[1, 0].plot(time_s, taul_pid, color="#2b8a3e", linewidth=1.8, label="Torque PID L")
+    
+    # Torque Izquierdo
+    axes[1, 0].plot(time_s, tau_agent_l, color="#8a2be2", linewidth=1.5, label="Torque Agente L")
+    axes[1, 0].plot(time_s, tau_combined_l, color="#ff7f0e", linewidth=2.0, label="Torque Combinado L")
+    axes[1, 0].plot(time_s, tau_pid_l, color="#2b8a3e", linewidth=1.8, label="Torque PID L")
     axes[1, 0].set_ylabel("Torque [Nm]")
     axes[1, 0].set_xlabel("Tiempo [s]")
     axes[1, 0].set_title("Torque Izquierdo")
     axes[1, 0].grid(True, alpha=0.25)
     axes[1, 0].legend(loc="best", frameon=False)
-
-    axes[1, 1].plot(time_s, taur_agent, color="#8a2be2", linewidth=1.5, label="Torque Agente R")
-    axes[1, 1].plot(time_s, taur_combined, color="#ff7f0e", linewidth=2.0, label="Torque Combinado R")
-    axes[1, 1].plot(time_s, taur_pid, color="#2b8a3e", linewidth=1.8, label="Torque PID R")
+    axes[1, 0].invert_yaxis()
+    
+    # Torque Derecho
+    axes[1, 1].plot(time_s, tau_agent_r, color="#8a2be2", linewidth=1.5, label="Torque Agente R")
+    axes[1, 1].plot(time_s, tau_combined_r, color="#ff7f0e", linewidth=2.0, label="Torque Combined R")
+    axes[1, 1].plot(time_s, tau_pid_r, color="#2b8a3e", linewidth=1.8, label="Torque PID R")
     axes[1, 1].set_xlabel("Tiempo [s]")
-    axes[1, 1].set_title("Torque Agente y Combinado Derecho")
+    axes[1, 1].set_title("Torque Derecho")
     axes[1, 1].grid(True, alpha=0.25)
     axes[1, 1].legend(loc="best", frameon=False)
-
+    
     plt.tight_layout()
     plt.savefig(plot_path, dpi=220)
     if show_plot:
@@ -370,8 +361,8 @@ def _plot_run(plot_path: str, show_plot: bool, time_s: np.ndarray, ql: np.ndarra
     else:
         plt.close(fig)
 
-# --- PyCandle Motor Interface ---
 
+# --- PyCandle Motor Interface ---
 class PyCandleTorqueReplayMotorInterface:
     _baud_label: str = "1M"
     _fdcan_enabled: bool = True
@@ -392,13 +383,10 @@ class PyCandleTorqueReplayMotorInterface:
     def __init__(self, joint_state_topic: str, command_topic: str, verbose: bool) -> None:
         del joint_state_topic 
         del command_topic     
-
         pyCandle = importlib.import_module("pyCandle")
-
         self._pycandle = pyCandle
         self._verbose = bool(verbose)
         self.motor_ids = [348, 349] 
-
         baud = self._resolve_baud_constant(self._baud_label)
         holders = _find_open_serial_devices()
         if holders:
@@ -410,22 +398,18 @@ class PyCandleTorqueReplayMotorInterface:
         self._debug(f"Creando objeto pyCandle.Candle con constructor='{self._constructor_mode}'...")
         self.candle = pyCandle.Candle(baud, self._fdcan_enabled)
         self._debug("Objeto pyCandle.Candle creado.")
-
         self._debug("Ejecutando ping CAN...")
         ids = list(self.candle.ping())
         self._debug(f"Ping CAN completado. IDs detectados: {ids}")
         if not ids:
             raise RuntimeError("No se detectaron drives en el bus CAN (pyCandle ping vacio).")
-
         ids_to_add = ids if self._add_all_drives else self.motor_ids
         for drive_id in ids_to_add:
             if drive_id in ids:
                 self._debug(f"Anadiendo MD80 id={drive_id}...")
                 self.candle.addMd80(drive_id)
-
         if not getattr(self.candle, "md80s", None):
             raise RuntimeError("No se pudo inicializar ningun MD80 en pyCandle.")
-
         self.drives = {}
         for mid in self.motor_ids:
             self._debug(f"Seleccionando objeto MD80 para motor {mid}...")
@@ -439,15 +423,12 @@ class PyCandleTorqueReplayMotorInterface:
             if self._max_torque_nm is not None:
                 self._debug(f"Fijando max torque motor {mid}: {self._max_torque_nm:.3f} Nm...")
                 drive.setMaxTorque(float(self._max_torque_nm))
-
         self._debug("Iniciando hilos de comunicacion CANdle...")
         self.candle.begin()
-
         self.current_pos = {mid: None for mid in self.motor_ids}
         self.current_vel = {mid: 0.0 for mid in self.motor_ids}
         self.current_effort = {mid: 0.0 for mid in self.motor_ids}
         self.last_state_ts = 0.0
-
         self._poll_state()
 
     def _debug(self, message: str) -> None:
@@ -476,11 +457,9 @@ class PyCandleTorqueReplayMotorInterface:
             enum_obj = getattr(self._pycandle, enum_name, None)
             if enum_obj is not None and hasattr(enum_obj, value_name):
                 return getattr(enum_obj, value_name)
-
         for attr_name in ("USB", "BUS_USB", "BusType_E_USB"):
             if hasattr(self._pycandle, attr_name):
                 return getattr(self._pycandle, attr_name)
-
         names = ", ".join(name for name in dir(self._pycandle) if "USB" in name.upper() or "BUS" in name.upper())
         raise RuntimeError(
             "No pude encontrar el enum USB en pyCandle. Candidatos vistos: {}".format(names or "ninguno")
@@ -492,10 +471,8 @@ class PyCandleTorqueReplayMotorInterface:
             if hasattr(self._pycandle, "CAN_BAUD_1M"):
                 return self._pycandle.CAN_BAUD_1M
             raise RuntimeError("pyCandle no expone CAN_BAUD_1M.")
-
         if normalized in {"500K", "500KBPS", "500000"} and hasattr(self._pycandle, "CAN_BAUD_500K"):
             return self._pycandle.CAN_BAUD_500K
-
         raise RuntimeError(f"Baudrate pyCandle no soportado: '{label}'. Usa 1M o 500K.")
 
     @staticmethod
@@ -518,15 +495,12 @@ class PyCandleTorqueReplayMotorInterface:
             drive_id = self._get_drive_id(drive)
             if drive_id is not None and drive_id == motor_id:
                 return drive
-
         if motor_id in ping_ids and len(drives) == len(ping_ids):
             idx = ping_ids.index(motor_id)
             if 0 <= idx < len(drives):
                 return drives[idx]
-
         if len(drives) == 1 and not self._strict_id_match:
             return drives[0]
-
         known_ids = [self._get_drive_id(d) for d in drives]
         raise RuntimeError(f"No se pudo mapear motor-id={motor_id} a un objeto MD80.")
 
@@ -585,7 +559,6 @@ class Ros2MotorInterface:
             from sensor_msgs.msg import JointState
         except Exception as exc:
             raise RuntimeError("ROS2 no esta disponible.") from exc
-
         try:
             candle_msg_mod = importlib.import_module("candle_ros2.msg")
             self._motion_cmd_cls = getattr(candle_msg_mod, "MotionCommand")
@@ -595,16 +568,13 @@ class Ros2MotorInterface:
             self._set_mode_cls = getattr(candle_srv_mod, "SetModeMd80s")
         except Exception as exc:
             raise RuntimeError("No pude importar dependencias de candle_ros2.") from exc
-
         self._rclpy = rclpy
         self._verbose = bool(verbose)
         self.motor_ids = [348, 349]
-
         self.current_pos: dict[int, Optional[float]] = {mid: None for mid in self.motor_ids}
         self.current_vel: dict[int, float] = {mid: 0.0 for mid in self.motor_ids}
         self.current_effort: dict[int, float] = {mid: 0.0 for mid in self.motor_ids}
         self.last_state_ts = 0.0
-
         self._rclpy.init(args=None)
         self.node = Node("mimo_sac_inference")
         self.pub = self.node.create_publisher(self._motion_cmd_cls, command_topic, 10)
@@ -613,7 +583,6 @@ class Ros2MotorInterface:
         self.set_mode_client = self.node.create_client(self._set_mode_cls, "/candle_ros2_node/set_mode_md80s")
         self.enable_client = self.node.create_client(self._generic_md80_cls, "/candle_ros2_node/enable_md80s")
         self.disable_client = self.node.create_client(self._generic_md80_cls, "/candle_ros2_node/disable_md80s")
-
         self._configure_motors()
 
     def _call_service(self, client, request, name: str, timeout_s: float = 10.0):
@@ -636,12 +605,10 @@ class Ros2MotorInterface:
         add_req = self._add_md80s_cls.Request()
         add_req.drive_ids = [int(mid) for mid in self.motor_ids]
         self._require_success(self._call_service(self.add_client, add_req, "add_md80s"), "add_md80s")
-
         mode_req = self._set_mode_cls.Request()
         mode_req.drive_ids = [int(mid) for mid in self.motor_ids]
         mode_req.mode = ["RAW_TORQUE"] * len(self.motor_ids)
         self._require_success(self._call_service(self.set_mode_client, mode_req, "set_mode_md80s"), "set_mode_md80s")
-
         enable_req = self._generic_md80_cls.Request()
         enable_req.drive_ids = [int(mid) for mid in self.motor_ids]
         self._require_success(self._call_service(self.enable_client, enable_req, "enable_md80s"), "enable_md80s")
@@ -715,8 +682,8 @@ def _probe_pycandle_constructors(baud_label: str) -> int:
             exit_code = 1
     return exit_code
 
-# --- Main Inference Script Logic ---
 
+# --- Main Inference Script Logic ---
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Inferencia en motor real combinando PID y agente SAC.")
     p.add_argument("--agent-path", type=Path, default=None, help="Ruta al modelo SAC entrenado (.zip).")
@@ -725,13 +692,13 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--joint-state-topic", default="/md80/joint_states", help="Topic ROS2.")
     p.add_argument("--command-topic", default="/md80/motion_command", help="Topic ROS2.")
     p.add_argument("--rate-hz", type=float, default=100.0, help="Frecuencia del bucle de control en Hz.")
-    p.add_argument("--kp", type=float, default=3.0, help="Ganancia proporcional PID.")
+    p.add_argument("--kp", type=float, default=2, help="Ganancia proporcional PID.")
     p.add_argument("--ki", type=float, default=0.0, help="Ganancia integral PID.")
-    p.add_argument("--kd", type=float, default=0.0, help="Ganancia derivativa PID.")
+    p.add_argument("--kd", type=float, default=0.1, help="Ganancia derivativa PID.")
     p.add_argument("--period", type=float, default=2.1, help="Duración en segundos de un ciclo.")
     p.add_argument("--phase-offset-l", type=float, default=50.0, help="Desfase pierna izquierda.")
     p.add_argument("--num-cycles", type=float, default=1.0, help="Número de ciclos de la trayectoria a ejecutar.")
-    p.add_argument("--safe-torque-limit", type=float, default=10.0, help="Límite seguro en Nm.")
+    p.add_argument("--safe-torque-limit", type=float, default=0.4, help="Límite seguro en Nm.")
     p.add_argument("--run-dir", default="", help="Directorio salida.")
     p.add_argument("--csv-path", default="", help="Ruta CSV.")
     p.add_argument("--plot-path", default="", help="Ruta gráfico.")
@@ -757,14 +724,11 @@ def _get_sac_observation(
 ) -> np.ndarray:
     phase_right = (100.0 * t_now / period) % 100.0
     phase_left = (phase_right + phase_offset_l) % 100.0
-
     err_right = target_q_r - q_r
     err_left = target_q_l - q_l
     vel_err_right = target_qd_r - qd_r
     vel_err_left = target_qd_l - qd_l
-
     exo_obs = np.array([q_r, qd_r, q_l, qd_l], dtype=np.float64)
-
     obs_main = np.array([
         np.sin(2.0 * np.pi * phase_right / 100.0),
         np.cos(2.0 * np.pi * phase_right / 100.0),
@@ -774,252 +738,244 @@ def _get_sac_observation(
         target_q_r, target_q_l, target_qd_r, target_qd_l,
         err_right, err_left, vel_err_right, vel_err_left,
     ], dtype=np.float64)
-
     observation = np.concatenate([obs_main, exo_obs, last_action], dtype=np.float64)
     return observation[np.newaxis, :]
 
 
 def main() -> int:
     args = _build_parser().parse_args()
-
     if args.probe_pycandle_constructors:
         return _probe_pycandle_constructors(args.pycandle_baud)
-
     if not args.source_csv.strip():
         raise ValueError("--source-csv es obligatorio.")
     if args.agent_path is None and not args.diagnose_pycandle_only:
         raise ValueError("--agent-path es obligatorio salvo que uses --diagnose-pycandle-only.")
     if args.agent_path is not None and not args.agent_path.exists():
         raise FileNotFoundError(f"Agente SAC no encontrado en: {args.agent_path}")
-
+        
     # --- Configuración de directorios de salida ---
     run_tag = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     repo_root = Path(__file__).resolve().parents[1]
     run_dir = args.run_dir.strip() if args.run_dir else str(repo_root / "outputs" / "inferencia" / run_tag)
     os.makedirs(run_dir, exist_ok=True)
     csv_path = args.csv_path.strip() if args.csv_path else os.path.join(run_dir, "telemetry.csv")
-    plot_path = args.plot_path.strip() if args.plot_path else os.path.join(run_dir, "timeseries.png")
+    plot_path = args.plot_path.strip() if args.plot_path else os.path.join(run_dir, "gait_tracking_plot.png")
 
-    # =========================================================================
-    # INICIALIZACIÓN MULTIPROCESO (AISLAR PYTORCH)
-    # =========================================================================
-    p_ia = None
-    parent_conn = None
+    # 1. Cargar la trayectoria de referencia
+    print(f"[Main] Cargando trayectoria de referencia desde: {args.source_csv}")
+    source = _load_source_csv(args.source_csv, period_s=args.period)
+    _write_run_config_txt(run_dir, args, source)
+
+    # 2. Encontrar los desfases temporales óptimos para empezar en posición 0
+    idx_start_r = np.argmin(np.abs(source.q_des_r_rad))
+    t_offset_r = float(source.time_s[idx_start_r])
+    
+    print(f"[Main] Alineación por cruce por cero calculada:")
+    print(f"       -> Offset temporal derecho (inicio en 0 rad): {t_offset_r:.4f} s")
+
+    # La izquierda va exactamente medio ciclo por detrás
+    t_l_init = (t_offset_r + (args.phase_offset_l / 100.0) * args.period) % args.period
+
+    # Tiempo que tarda esa fase desplazada en volver a cruzar por cero
+    delay_left_activation = (args.phase_offset_l / 100.0) * args.period
+
+    print(f"       -> Offset temporal izquierdo: {t_l_init:.4f} s")
+    print(f"       -> Activación izquierda tras {delay_left_activation:.4f} s")
+
+    # 3. Lanzar el proceso aislado del agente SAC si no es modo diagnóstico de hardware
+    pipe_main, pipe_agent = mp.Pipe()
+    proceso_ia = None
     if not args.diagnose_pycandle_only:
-        # 1. Crear el canal de comunicación (Pipe)
-        parent_conn, child_conn = mp.Pipe()
+        proceso_ia = mp.Process(
+            target=proceso_agente_sac,
+            args=(pipe_agent, args.agent_path, args.verbose),
+            daemon=True
+        )
+        proceso_ia.start()
         
-        # 2. Lanzar el proceso aislado
-        p_ia = mp.Process(target=proceso_agente_sac, args=(child_conn, args.agent_path, args.verbose))
-        p_ia.start()
-        
-        # 3. Esperar confirmación de que el modelo cargó sin SegFault
-        status = parent_conn.recv()
+        # Esperar confirmación de carga del agente
+        status = pipe_main.recv()
         if status != "READY":
-            raise RuntimeError("El subproceso de IA falló al intentar cargar stable_baselines3.")
+            print("[Main] ERROR: El proceso del agente SAC no pudo inicializarse correctamente.")
+            return 1
 
-    # --- Configurar y conectar con la interfaz de motor ---
+    # 4. Inicializar la interfaz de los motores reales
+    print(f"[Main] Inicializando interfaz de hardware de tipo: {args.interface}")
     if args.interface == "pycandle":
         PyCandleTorqueReplayMotorInterface.configure_from_args(args)
         interface = PyCandleTorqueReplayMotorInterface(
-            joint_state_topic="", command_topic="", verbose=bool(args.verbose)
-        )
-    elif args.interface == "ros2":
-        interface = Ros2MotorInterface(
-            joint_state_topic=args.joint_state_topic, command_topic=args.command_topic, verbose=bool(args.verbose)
+            joint_state_topic=args.joint_state_topic,
+            command_topic=args.command_topic,
+            verbose=args.verbose
         )
     else:
-        raise RuntimeError(f"Interfaz no soportada: {args.interface}")
+        interface = Ros2MotorInterface(
+            joint_state_topic=args.joint_state_topic,
+            command_topic=args.command_topic,
+            verbose=args.verbose
+        )
 
-    if not interface.wait_for_state(timeout_s=10.0):
+    if not interface.wait_for_state(timeout_s=5.0):
+        print("[Main] ERROR: No se recibieron estados iniciales de los motores. Abortando.")
         interface.close()
-        raise RuntimeError("No se recibió estado de los motores 348/349. Revisa el bus CAN.")
+        if proceso_ia:
+            pipe_main.send(None)
+        return 1
 
-    if args.diagnose_pycandle_only:
-        print("Diagnostico OK.", flush=True)
-        interface.close()
-        return 0
-
-    # --- Cargar trayectoria de referencia ---
-    source = _load_source_csv(args.source_csv.strip(), period_s=args.period)
-    print(f"Motores listos. Iniciando inferencia combinada PID + SAC (Multiproceso) con {args.interface}.")
-
-    try:
-        config_path = _write_run_config_txt(run_dir=run_dir, args=args, source=source)
-    except Exception:
-        pass
-
-    # --- Inicialización del controlador ---
-    kp, ki, kd = args.kp, args.ki, args.kd
-    dt_s = 1.0 / max(1e-3, float(args.rate_hz))
-    period = float(source.time_s[-1])
+    # 5. Configuración del bucle de control síncrono
+    dt_loop = 1.0 / args.rate_hz
+    duration_s = args.num_cycles * args.period
+    steps = int(duration_s * args.rate_hz)
     
-    last_agent_action = np.zeros(2, dtype=np.float64)
-    integral_error_l, previous_error_l = 0.0, 0.0
-    integral_error_r, previous_error_r = 0.0, 0.0
-
-    t0 = time.time()
-    next_tick = t0
-
-    t_hist, ql_hist, qr_hist = [], [], []
-    qdl_hist, qdr_hist = [], []
+    # Listas para almacenar la telemetría histórica
+    time_hist, ql_hist, qr_hist, qdl_hist, qdr_hist = [], [], [], [], []
     ql_des_hist, qr_des_hist = [], []
     taul_pid_hist, taur_pid_hist = [], []
     taul_agent_hist, taur_agent_hist = [], []
     taul_combined_hist, taur_combined_hist = [], []
 
-    try:
-        while True:
-            now = time.time()
-            t_rel = (now - t0)
-            if t_rel > float(args.num_cycles * period):
-                print("Trayectoria completada.")
-                break
+    print(f"[Main] Iniciando ejecución de {args.num_cycles} ciclos ({duration_s:.2f} s, {steps} pasos)...")
+    
+    # Variables de control PID
+    integral_l, integral_r = 0.0, 0.0
+    last_err_l, last_err_r = 0.0, 0.0
+    last_action = np.zeros(2, dtype=np.float64)
 
-            interface.spin_once(timeout_s=0.0)
-            current_q_l = float(interface.current_pos[348] or 0.0)
-            current_q_r = float(interface.current_pos[349] or 0.0)
-            current_qd_l = float(interface.current_vel[348])
-            current_qd_r = float(interface.current_vel[349])
+    t_start_loop = time.time()
+    
+    for step in range(steps):
+        t_bucle = step * dt_loop
+        
+        # --- Cálculo de referencias con desfase dinámico y gating ---
+        t_r = (t_offset_r + t_bucle) % args.period
+        q_des_r = float(np.interp(t_r, source.time_s, source.q_des_r_rad))
+        qd_des_r = float(np.interp(t_r, source.time_s, source.qd_des_r_rad_s))
+        
+        if t_bucle < delay_left_activation:
+            q_des_l = 0.0
+            qd_des_l = 0.0
+        else:
+            t_l = (t_l_init + (t_bucle - delay_left_activation)) % args.period
 
-            # Muestrear la trayectoria de referencia de forma cíclica
-            target_q_l, target_q_r, target_qd_l, target_qd_r = _sample_source(source, t_rel % period)
+            q_des_l = float(np.interp(t_l, source.time_s, source.q_des_l_rad))
+            qd_des_l = float(np.interp(t_l, source.time_s, source.qd_des_l_rad_s))
 
-            # Invertir las observaciones de la cadera izquierda para el agente
-            # (el agente ha aprendido que positivo = flexion para ambas caderas)
-            inverted_current_q_l = -current_q_l
-            inverted_current_qd_l = -current_qd_l
-            inverted_target_q_l = -target_q_l
-            inverted_target_qd_l = -target_qd_l
-            
-            # Invertir la última acción del agente para la cadera izquierda antes de pasarla
-            inverted_last_agent_action = last_agent_action.copy()
-            inverted_last_agent_action[1] = -inverted_last_agent_action[1] # last_action[1] es para la cadera izquierda
+        # --- Lectura de sensores de los motores reales ---
+        interface.spin_once(timeout_s=0.0)
+        q_real_l = interface.current_pos[348]
+        qd_real_l = interface.current_vel[348]
+        q_real_r = interface.current_pos[349]
+        qd_real_r = interface.current_vel[349]
+        
+        if q_real_l is None or q_real_r is None:
+            # Fallback en caso de pérdida temporal de lectura de hardware
+            q_real_l = q_real_l if q_real_l is not None else 0.0
+            q_real_r = q_real_r if q_real_r is not None else 0.0
 
-            # =======================================================
-            # COMUNICACIÓN CON LA IA POR EL PIPE (No bloquea el motor)
-            # =======================================================
-            sac_observation = _get_sac_observation(
-                t_rel, period, inverted_current_q_l, inverted_current_qd_l, current_q_r, current_qd_r,
-                inverted_target_q_l, target_q_r, inverted_target_qd_l, target_qd_r, inverted_last_agent_action,
-                phase_offset_l=args.phase_offset_l
+        # --- Controlador PID Clásico ---
+        err_r = q_des_r - q_real_r
+        err_l = q_des_l - q_real_l
+        
+        integral_r += err_r * dt_loop
+        integral_l += err_l * dt_loop
+        
+        deriv_r = (err_r - last_err_r) / dt_loop if step > 0 else 0.0
+        deriv_l = (err_l - last_err_l) / dt_loop if step > 0 else 0.0
+        
+        last_err_r, last_err_l = err_r, err_l
+        
+        tau_pid_r = args.kp * err_r + args.ki * integral_r + args.kd * deriv_r
+        tau_pid_l = args.kp * err_l + args.ki * integral_l + args.kd * deriv_l
+
+        # --- Inferencia del Agente SAC (Proceso aislado) ---
+        tau_agent_r, tau_agent_l = 0.0, 0.0
+        if not args.diagnose_pycandle_only:
+            # Empaquetar la observación actual
+            obs = _get_sac_observation(
+                t_bucle, args.period, q_real_l, qd_real_l, q_real_r, qd_real_r,
+                q_des_l, q_des_r, qd_des_l, qd_des_r, last_action, args.phase_offset_l
             )
+            # Enviar por el Pipe al proceso de PyTorch
+            pipe_main.send(obs)
+            # Recibir la acción calculada de vuelta (bloqueante pero inmediato)
+            action = pipe_main.recv()
+            last_action = np.array(action, dtype=np.float64).flatten()
             
-            # Enviar estado a PyTorch
-            parent_conn.send(sac_observation)
+            # Mapeo de acciones del agente a torques físicos
+            tau_agent_r = -float(last_action[0])
+            tau_agent_l = -float(last_action[1])
             
-            # Esperar respuesta
-            agent_action = parent_conn.recv()
-            # =======================================================
+            # Aplicar la inversión de polaridad en la cadera izquierda según el entrenamiento
+            #tau_agent_l = -tau_agent_l
 
-            # Torque calculado por agente
-            agent_torque_r = 0#float(agent_action[0, 0])
-            agent_torque_l = 0#float(agent_action[0, 1])
-            last_agent_action = agent_action[0].copy()
+        # --- Combinación de Leyes de Control y Saturación Segura ---
+        #tau_combined_r = np.clip(tau_agent_r, -args.safe_torque_limit, args.safe_torque_limit)
+        #tau_combined_l = np.clip(tau_agent_l, -args.safe_torque_limit, args.safe_torque_limit)
+        tau_combined_r = np.clip(tau_pid_r + tau_agent_r, -args.safe_torque_limit, args.safe_torque_limit)
+        tau_combined_l = np.clip(tau_pid_l + tau_agent_l, -args.safe_torque_limit, args.safe_torque_limit)
 
-            # --- PID ---
-            error_q_l = target_q_l - current_q_l
-            integral_error_l += error_q_l * dt_s
-            derivative_error_l = (error_q_l - previous_error_l) / dt_s if dt_s > 0 else 0.0
-            pid_torque_l = kp * error_q_l + ki * integral_error_l + kd * derivative_error_l
-            previous_error_l = error_q_l
+        # Enviar comandos de torque directos al hardware
+        interface.publish_torque(tau_combined_l, tau_combined_r)
 
-            error_q_r = target_q_r - current_q_r
-            integral_error_r += error_q_r * dt_s
-            derivative_error_r = (error_q_r - previous_error_r) / dt_s if dt_s > 0 else 0.0
-            pid_torque_r = kp * error_q_r + ki * integral_error_r + kd * derivative_error_r
-            previous_error_r = error_q_r
+        # --- Guardar Telemetría ---
+        time_hist.append(t_bucle)
+        qr_hist.append(q_real_r); ql_hist.append(q_real_l)
+        qdr_hist.append(qd_real_r); qdl_hist.append(qd_real_l)
+        qr_des_hist.append(q_des_r); ql_des_hist.append(q_des_l)
+        taur_pid_hist.append(tau_pid_r); taul_pid_hist.append(tau_pid_l)
+        taur_agent_hist.append(tau_agent_r); taul_agent_hist.append(tau_agent_l)
+        taur_combined_hist.append(tau_combined_r); taul_combined_hist.append(tau_combined_l)
 
-            pid_output_l = pid_torque_l
-            pid_output_r = pid_torque_r
+        # --- Control de tiempo estricto (frecuencia de muestreo en tiempo real) ---
+        t_elapsed = time.time() - t_start_loop
+        t_next_target = (step + 1) * dt_loop
+        if t_elapsed < t_next_target:
+            time.sleep(t_next_target - t_elapsed)
 
-            agent_output_l = agent_torque_l
-            agent_output_r = agent_torque_r
+    print("[Main] Trayectoria finalizada. Deteniendo motores de forma segura...")
+    interface.close()
 
-            combined_torque_l = pid_output_l + agent_output_l
-            combined_torque_r = pid_output_r + agent_output_r
-
-            safe_limit = float(args.safe_torque_limit)
-            final_torque_l = float(np.clip(combined_torque_l, -safe_limit, safe_limit))
-            final_torque_r = float(np.clip(combined_torque_r, -safe_limit, safe_limit))
-
-            interface.publish_torque(final_torque_l, final_torque_r)
-
-            t_hist.append(t_rel)
-            ql_hist.append(current_q_l)
-            qr_hist.append(current_q_r)
-            qdl_hist.append(current_qd_l)
-            qdr_hist.append(current_qd_r)
-            ql_des_hist.append(target_q_l)
-            qr_des_hist.append(target_q_r)
-
-            taul_pid_hist.append(pid_output_l)
-            taur_pid_hist.append(pid_output_r)
-
-            taul_agent_hist.append(agent_output_l)
-            taur_agent_hist.append(agent_output_r)
-
-            taul_combined_hist.append(final_torque_l)
-            taur_combined_hist.append(final_torque_r)
-
-            if len(t_hist) < 5 or len(t_hist) % 100 == 0:
-                print(
-                    "t={:.3f}s L(348): q={:+.3f} q_des={:+.3f} tau_pid={:+.3f} tau_agent={:+.3f} tau_final={:+.3f} | R(349): q={:+.3f} q_des={:+.3f} tau_pid={:+.3f} tau_agent={:+.3f} tau_final={:+.3f}".format(
-                        t_rel,
-                        current_q_l, target_q_l, -pid_torque_l, -agent_torque_l, final_torque_l,
-                        current_q_r, target_q_r, pid_torque_r, agent_torque_r, final_torque_r,
-                    ),
-                    flush=True,
-                )
-
-            next_tick += dt_s
-            sleep_s = next_tick - time.time()
-            if sleep_s > 0.0:
-                time.sleep(sleep_s)
-
-    except KeyboardInterrupt:
-        print("\nInferencia interrumpida por el usuario.")
-    finally:
-        # --- Apagado ordenado del hardware y del subproceso IA ---
+    # Apagar el proceso hijo de la IA de forma segura
+    if proceso_ia:
         try:
-            interface.publish_torque(0.0, 0.0)
+            pipe_main.send(None)
+            proceso_ia.join(timeout=2.0)
         except Exception:
             pass
-        interface.close()
-        print("Motores desactivados e interfaz cerrada.")
-        
-        if p_ia is not None and p_ia.is_alive():
-            try:
-                parent_conn.send(None) # Manda la orden de cierre al bucle IA
-                p_ia.join(timeout=2.0)
-            except Exception:
-                p_ia.terminate()
 
-    # --- Guardado de datos ... ---
-    t_arr = np.asarray(t_hist, dtype=np.float64)
-    ql_arr = np.asarray(ql_hist, dtype=np.float64); qr_arr = np.asarray(qr_hist, dtype=np.float64)
-    qdl_arr = np.asarray(qdl_hist, dtype=np.float64); qdr_arr = np.asarray(qdr_hist, dtype=np.float64)
-    ql_des_arr = np.asarray(ql_des_hist, dtype=np.float64); qr_des_arr = np.asarray(qr_des_hist, dtype=np.float64)
-    taul_pid_arr = np.asarray(taul_pid_hist, dtype=np.float64); taur_pid_arr = np.asarray(taur_pid_hist, dtype=np.float64)
-    taul_agent_arr = np.asarray(taul_agent_hist, dtype=np.float64); taur_agent_arr = np.asarray(taur_agent_hist, dtype=np.float64)
-    taul_combined_arr = np.asarray(taul_combined_hist, dtype=np.float64); taur_combined_arr = np.asarray(taur_combined_hist, dtype=np.float64)
+    # Verificación de datos guardados para evitar IndexError
+    if len(time_hist) == 0:
+        print("[Main] ERROR: El bucle de control finalizó sin registrar datos. Revisa la conexión física con los motores.")
+        return 1
+
+    # Convertir telemetría recopilada en arrays de numpy
+    t_arr = np.array(time_hist, dtype=np.float64)
+    ql_arr = np.array(ql_hist, dtype=np.float64); qr_arr = np.array(qr_hist, dtype=np.float64)
+    qdl_arr = np.array(qdl_hist, dtype=np.float64); qdr_arr = np.array(qdr_hist, dtype=np.float64)
+    ql_des_arr = np.array(ql_des_hist, dtype=np.float64); qr_des_arr = np.array(qr_des_hist, dtype=np.float64)
+    taul_pid_arr = np.array(taul_pid_hist, dtype=np.float64); taur_pid_arr = np.array(taur_pid_hist, dtype=np.float64)
+    taul_agent_arr = np.array(taul_agent_hist, dtype=np.float64); taur_agent_arr = np.array(taur_agent_hist, dtype=np.float64)
+    taul_combined_arr = np.array(taul_combined_hist, dtype=np.float64); taur_combined_arr = np.array(taur_combined_hist, dtype=np.float64)
 
     if args.save_csv:
+        print(f"[Main] Guardando datos de telemetría en: {csv_path}")
+        # Llamamos exactamente con los 14 argumentos posicionales requeridos
         _save_csv(
             csv_path, t_arr, ql_arr, qr_arr, qdl_arr, qdr_arr, ql_des_arr, qr_des_arr,
             taul_pid_arr, taur_pid_arr, taul_agent_arr, taur_agent_arr, taul_combined_arr, taur_combined_arr
         )
 
     if args.save_plot:
+        print(f"[Main] Generando gráfico de rendimiento en: {plot_path}")
+        # Llamamos exactamente con los 13 argumentos requeridos para _plot_run
         _plot_run(
             plot_path, bool(args.show_plot), t_arr, ql_arr, qr_arr, ql_des_arr, qr_des_arr,
             taul_pid_arr, taur_pid_arr, taul_agent_arr, taur_agent_arr, taul_combined_arr, taur_combined_arr
         )
 
-    meta_path = os.path.join(run_dir, "inference_info.txt")
-    with open(meta_path, "w", encoding="utf-8") as f:
-        f.write(f"run_dir: {run_dir}\nagent_path: {args.agent_path}\nsource_csv: {args.source_csv}\ninterface: {args.interface}\nmotor_ids: [348, 349]\nrate_hz: {args.rate_hz}\nkp: {args.kp}\nki: {args.ki}\nkd: {args.kd}\nsafe_torque_limit: {args.safe_torque_limit}\n")
+    print("[Main] Script de inferencia finalizado con éxito.")
     return 0
 
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())
