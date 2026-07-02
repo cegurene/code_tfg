@@ -51,6 +51,25 @@ register(id="nair_gait_h0404MimoExo-v0",
         }
     )
 
+register(id="nair_gait_h0404MimoExo-v2",
+        entry_point="sconegym.nair_mimoEnv:MimoGym",
+        kwargs={
+            'model_file': curr_dir + '/nair_envs/H0404_MimoExo/H0404_2_MimoExoV0.scone',
+            'model_HFD': curr_dir + '/nair_envs/H0404_MimoExo/models/H0404_2_MimoExoV0.hfd',
+            'passive_subject': True, 
+            'exo_assist': True,
+            'clip_actions': False,
+            'exo_type': 'motor',
+            'max_episode_steps': 1000,
+            'step_size': 0.01,
+            'obs_type': 'MS',
+            'rew_keys':{
+                "knee_angle": 1.0,
+                "number_muscles": 0.1,
+            }
+        }
+    )
+
 # MIMO_EXO (H0412)
 # Gait
 register(id="nair_gait_h0412MimoExo-v0",

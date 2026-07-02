@@ -75,7 +75,7 @@ def proceso_agente_sac(pipe_conn, agent_path: Path, verbose: bool) -> None:
                 
             # Predecir torque
             action, _ = model.predict(obs, deterministic=True)
-            print("ACTION:", action)
+            #print("ACTION:", action)
             
             # Enviar resultado de vuelta
             pipe_conn.send(action)
@@ -692,13 +692,13 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--joint-state-topic", default="/md80/joint_states", help="Topic ROS2.")
     p.add_argument("--command-topic", default="/md80/motion_command", help="Topic ROS2.")
     p.add_argument("--rate-hz", type=float, default=100.0, help="Frecuencia del bucle de control en Hz.")
-    p.add_argument("--kp", type=float, default=2, help="Ganancia proporcional PID.")
+    p.add_argument("--kp", type=float, default=2.5, help="Ganancia proporcional PID.")
     p.add_argument("--ki", type=float, default=0.0, help="Ganancia integral PID.")
     p.add_argument("--kd", type=float, default=0.1, help="Ganancia derivativa PID.")
     p.add_argument("--period", type=float, default=2.1, help="Duración en segundos de un ciclo.")
     p.add_argument("--phase-offset-l", type=float, default=50.0, help="Desfase pierna izquierda.")
     p.add_argument("--num-cycles", type=float, default=1.0, help="Número de ciclos de la trayectoria a ejecutar.")
-    p.add_argument("--safe-torque-limit", type=float, default=0.4, help="Límite seguro en Nm.")
+    p.add_argument("--safe-torque-limit", type=float, default=2.0, help="Límite seguro en Nm.")
     p.add_argument("--run-dir", default="", help="Directorio salida.")
     p.add_argument("--csv-path", default="", help="Ruta CSV.")
     p.add_argument("--plot-path", default="", help="Ruta gráfico.")
@@ -909,8 +909,8 @@ def main() -> int:
             #tau_agent_l = -tau_agent_l
 
         # --- Combinación de Leyes de Control y Saturación Segura ---
-        #tau_combined_r = np.clip(tau_agent_r, -args.safe_torque_limit, args.safe_torque_limit)
-        #tau_combined_l = np.clip(tau_agent_l, -args.safe_torque_limit, args.safe_torque_limit)
+        #tau_combined_r = np.clip(tau_pid_r, -args.safe_torque_limit, args.safe_torque_limit)
+        #tau_combined_l = np.clip(tau_pid_l, -args.safe_torque_limit, args.safe_torque_limit)
         tau_combined_r = np.clip(tau_pid_r + tau_agent_r, -args.safe_torque_limit, args.safe_torque_limit)
         tau_combined_l = np.clip(tau_pid_l + tau_agent_l, -args.safe_torque_limit, args.safe_torque_limit)
 

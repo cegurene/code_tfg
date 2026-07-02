@@ -1,0 +1,161 @@
+model {
+	material {
+		name = default_material
+		static_friction = 0.9
+		dynamic_friction = 0.9
+		stiffness = 11006.4
+		damping = 1
+	}
+	model_options {
+		joint_stiffness = 1e+06
+		joint_limit_stiffness = 500
+	}
+	body {
+		name = ground
+		mass = 0
+		inertia { x = 0 y = 0 z = 0 }
+	}
+	body {
+		name = pelvis
+		mass = 1,3
+		inertia { x = 0.1028 y = 0.0871 z = 0.0579 }
+		pos { x = -0.0707 y = 1 z = 0 } #y = 0
+		mesh { file = sacrum.vtp pos { x = 0.0707 y = 0 z = 0 } }
+		mesh { file = pelvis.vtp pos { x = 0.0707 y = 0 z = 0 } }
+		mesh { file = l_pelvis.vtp pos { x = 0.0707 y = 0 z = 0 } }
+		joint {
+			name = pelvis_fix
+			parent = ground
+			pos_in_parent { x = 0 y = 1 z = 0 }
+			pos_in_child { x = 0 y = 0 z = 0 }
+			limits { x = 0..0 y = 0..0 z = 0..0 }
+		}
+	}
+	body {
+		name = femur_r
+		mass = 0.7
+		inertia { x = 0.1339 y = 0.0351 z = 0.1412 }
+		joint {
+			name = hip_r
+			parent = pelvis
+			pos_in_parent { x = 0 y = -0.0661 z = 0.0835 }
+			pos_in_child { x = 0 y = 0.17 z = 0 }
+			limits { x = 0..0 y = 0..0 z = -30..120 }
+		}
+		mesh { file = femur.vtp pos { x = 0 y = 0.17 z = 0 } }
+	}
+	body {
+		name = femur_l
+		mass = 0.7
+		inertia { x = 0.1339 y = 0.0351 z = 0.1412 }
+		joint {
+			name = hip_l
+			parent = pelvis
+			pos_in_parent { x = 0 y = -0.0661 z = -0.0835 }
+			pos_in_child { x = 0 y = 0.17 z = 0 }
+			limits { x = 0..0 y = 0..0 z = -30..120 }
+		}
+		mesh { file = l_femur.vtp pos { x = 0 y = 0.17 z = 0 } }
+	}
+	body {
+		name = torso
+		mass = 3,65
+		inertia { x = 1.4745 y = 0.7555 z = 1.4314 }
+		joint {
+			name = back
+			parent = pelvis
+			pos_in_parent { x = -0.03 y = 0.0815 z = 0 }
+			pos_in_child { x = 0.03 y = -0.32 z = 0 }
+			limits { x = 0..0 y = 0..0 z = 0..0 }
+		}
+		mesh { file = hat_spine.vtp pos { x = 0.03 y = -0.32 z = 0 } }
+		mesh { file = hat_jaw.vtp pos { x = 0.03 y = -0.32 z = 0 } }
+		mesh { file = hat_skull.vtp pos { x = 0.03 y = -0.32 z = 0 } }
+		mesh { file = hat_ribs.vtp pos { x = 0.03 y = -0.32 z = 0 } }
+	}
+	point_path_muscle {
+		name = glut_max_r
+		max_isometric_force = 1944
+		optimal_fiber_length = 0.1569
+		tendon_slack_length = 0.111
+		pennation_angle = 0.3822
+		path [
+			{ body = pelvis pos { x = -0.0642 y = 0.0176 z = 0.0563 } }
+			{ body = pelvis pos { x = -0.0669 y = -0.052 z = 0.0914 } }
+			{ body = femur_r pos { x = -0.0426 y = 0.117 z = 0.0293 } }
+			{ body = femur_r pos { x = -0.0156 y = 0.0684 z = 0.0419 } }
+		]
+	}
+	point_path_muscle {
+		name = iliopsoas_r
+		max_isometric_force = 2186
+		optimal_fiber_length = 0.1066
+		tendon_slack_length = 0.152
+		pennation_angle = 0.2496
+		path [
+			{ body = pelvis pos { x = 0.006 y = 0.0887 z = 0.0289 } }
+			{ body = pelvis pos { x = 0.0407 y = -0.01 z = 0.076 } }
+			{ body = femur_r pos { x = 0.033 y = 0.135 z = 0.0038 } }
+			{ body = femur_r pos { x = -0.0188 y = 0.1103 z = 0.0104 } }
+		]
+	}
+	point_path_muscle {
+		name = glut_max_l
+		max_isometric_force = 1944
+		optimal_fiber_length = 0.1569
+		tendon_slack_length = 0.111
+		pennation_angle = 0.3822
+		path [
+			{ body = pelvis pos { x = -0.0642 y = 0.0176 z = -0.0563 } }
+			{ body = pelvis pos { x = -0.0669 y = -0.052 z = -0.0914 } }
+			{ body = femur_l pos { x = -0.0426 y = 0.117 z = -0.0293 } }
+			{ body = femur_l pos { x = -0.0156 y = 0.0684 z = -0.0419 } }
+		]
+	}
+	point_path_muscle {
+		name = iliopsoas_l
+		max_isometric_force = 2186
+		optimal_fiber_length = 0.1066
+		tendon_slack_length = 0.152
+		pennation_angle = 0.2496
+		path [
+			{ body = pelvis pos { x = 0.006 y = 0.0887 z = -0.0289 } }
+			{ body = pelvis pos { x = 0.0407 y = -0.01 z = -0.076 } }
+			{ body = femur_l pos { x = 0.033 y = 0.135 z = -0.0038 } }
+			{ body = femur_l pos { x = -0.0188 y = 0.1103 z = -0.0104 } }
+		]
+	}
+	# Future work 
+	# Review joint motors and change them by exo joints (exo_hip_l, exo_hip_r)
+	
+	geometry {
+		name = platform
+		type = plane
+		normal { x = -1 y = 0 z = 0 }
+		body = ground
+		pos { x = 0 y = 0 z = 0 }
+		ori { x = 0 y = 0 z = -90 }
+	}
+	
+	geometry {
+		name = pelvis
+		type = capsule
+		radius = 0.1
+		height = 0.2
+		body = pelvis
+		pos { x = 0.0 y = -0.05 z = 0 }
+		ori { x = 90 y = 0 z = 0 }
+	}
+	geometry {
+		name = shoulders
+		type = capsule
+		radius = 0.1
+		height = 0.2
+		body = torso
+		pos { x = 0.0 y = 0 z = 0 }
+		ori { x = 90 y = 0 z = 0 }
+	}
+	dof { name = hip_flexion_r source = hip_rz_r range = -30..120 }
+	dof { name = hip_flexion_l source = hip_rz_l range = -30..120 }
+	
+}
