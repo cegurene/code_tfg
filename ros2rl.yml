@@ -111,3 +111,17 @@ dependencies:
       - tzdata==2025.2
       - werkzeug==3.1.4
 prefix: /home/carlos/miniconda3/envs/ros2rl
+
+# Notas sobre dependencias del sistema
+# Los paquetes ROS2 en tu sistema fueron instalados vía APT (no conda),
+# por lo que no aparecen con versiones en este `environment.yml`.
+system_dependencies:
+  platform: ubuntu
+  apt_packages_file: ros2-system-packages.txt
+  install_instructions: |
+    # Actualizar índices y reinstalar los paquetes ROS listados en
+    # ros2-system-packages.txt (ejecutar con privilegios sudo):
+    sudo apt update
+    xargs -a ros2-system-packages.txt sudo apt install -y
+  note: "Conda no gestiona paquetes instalados por apt; usa el archivo
+    'ros2-system-packages.txt' para reproducir las dependencias del sistema."
