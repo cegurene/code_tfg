@@ -234,13 +234,13 @@ def plot_hip_velocity(ax: plt.Axes, df: pd.DataFrame, label_suffix: str = ""):
     tgt_r = _col(df, "hip_vel_target_r")
 
     if real_l is not None:
-        ax.plot(t, np.degrees(real_l), color=LEFT_COLOR, label=f"Real L{label_suffix}")
+        ax.plot(t, np.degrees(real_l), color=LEFT_COLOR, linewidth=0.8, label=f"Real L{label_suffix}")
     if real_r is not None:
-        ax.plot(t, np.degrees(real_r), color=RIGHT_COLOR, label=f"Real R{label_suffix}")
+        ax.plot(t, np.degrees(real_r), color=RIGHT_COLOR, linewidth=0.8, label=f"Real R{label_suffix}")
     if tgt_l is not None:
-        ax.plot(t, np.degrees(tgt_l), color=LEFT_COLOR, label=f"Target L{label_suffix}", ls=TARGET_LS, alpha=TARGET_ALPHA)
+        ax.plot(t, np.degrees(tgt_l), color=LEFT_COLOR, linewidth=0.8, label=f"Target L{label_suffix}", ls=TARGET_LS, alpha=TARGET_ALPHA)
     if tgt_r is not None:
-        ax.plot(t, np.degrees(tgt_r), color=RIGHT_COLOR, label=f"Target R{label_suffix}", ls=TARGET_LS, alpha=TARGET_ALPHA)
+        ax.plot(t, np.degrees(tgt_r), color=RIGHT_COLOR, linewidth=0.8, label=f"Target R{label_suffix}", ls=TARGET_LS, alpha=TARGET_ALPHA)
 
     ax.set_title("Velocidad de cadera")
     ax.set_xlabel(xl)
@@ -254,12 +254,12 @@ def plot_muscle_activations(ax: plt.Axes, df: pd.DataFrame, label_suffix: str = 
     for col, color in MUSCLE_COLORS.items():
         arr = _col(df, col)
         if arr is not None:
-            ax.plot(t, arr, color=color, label=f"{MUSCLE_LABELS[col]}{label_suffix}")
+            ax.plot(t, arr, color=color, linewidth=0.8, label=f"{MUSCLE_LABELS[col]}{label_suffix}")
 
     ax.set_title("Activaciones musculares")
     ax.set_xlabel(xl)
     ax.set_ylabel("Activación (0–1)")
-    ax.set_ylim(-0.02, 1.05)
+    ax.set_ylim(-0.02, 0.36)
     ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, decimals=0))
     ax.legend(ncol=2)
 
@@ -271,7 +271,7 @@ def plot_torque(ax: plt.Axes, df: pd.DataFrame, label_suffix: str = ""):
         arr = _col(df, col)
         side = "L" if col.endswith("_l") else "R"
         if arr is not None:
-            ax.plot(t, arr, color=color, label=f"Torque exo {side}{label_suffix}")
+            ax.plot(t, arr, color=color, linewidth=0.8, label=f"Torque exo {side}{label_suffix}")
 
     ax.axhline(0, color="#94A3B8", lw=0.8, ls=":")
     ax.set_title("Torque del exoesqueleto")
@@ -285,8 +285,12 @@ def plot_torque(ax: plt.Axes, df: pd.DataFrame, label_suffix: str = ""):
 # ---------------------------------------------------------------------------
 def make_dashboard(dfs: list[pd.DataFrame], labels: list[str], title: str) -> plt.Figure:
     apply_style()
-    fig, axes = plt.subplots(2, 2, figsize=(13, 8))
-    fig.suptitle(title, fontsize=13, fontweight="bold", color="#0F172A", y=1.01)
+    
+    # He aumentado el tamaño de (13, 8) a (16, 11) para que sea más grande
+    fig, axes = plt.subplots(2, 2, figsize=(16, 11))
+    
+    # Ajustamos sutilmente 'y' a 1.02 para que el título no se solape con el contenido
+    fig.suptitle(title, fontsize=14, fontweight="bold", color="#0F172A", y=1.02)
 
     multi = len(dfs) > 1
     for df, lbl in zip(dfs, labels):

@@ -68,49 +68,49 @@ def generar_plots(data_pid, data_combined):
     
     # --- COLUMNA IZQUIERDA: CADERA DERECHA ---
     # Fila 1: Errores de Posición (Ya transformados a grados)
-    axes[0, 0].plot(data_pid['time'], data_pid['error_pos_r'], label='Solo PID', alpha=0.7)
-    axes[0, 0].plot(data_combined['time'], data_combined['error_pos_r'], label='PID + Agente', alpha=0.7)
-    axes[0, 0].set_title('Error de Posición - Cadera Derecha')
-    axes[0, 0].set_ylabel('Error (Grados °)')
-    axes[0, 0].grid(True)
-    axes[0, 0].legend()
-    
-    # Fila 2: Torque Aplicado al Motor
-    axes[1, 0].plot(data_pid['time'], data_pid['torque_r'], label='Solo PID', alpha=0.7)
-    axes[1, 0].plot(data_combined['time'], data_combined['torque_r'], label='PID + Agente', alpha=0.7)
-    axes[1, 0].set_title('Torque Total al Motor - Cadera Derecha')
-    axes[1, 0].set_ylabel('Torque (Nm)')
-    axes[1, 0].grid(True)
-    
-    # Fila 3: Diferencia de Torque Neto
-    diff_r = data_combined['torque_r'] - data_pid['torque_r'].reindex_like(data_combined['torque_r']).fillna(0)
-    axes[2, 0].plot(data_combined['time'], diff_r, color='purple', alpha=0.7)
-    axes[2, 0].set_title('Aporte Neto del Agente (Δ Torque Derecho)')
-    axes[2, 0].set_xlabel('Tiempo (s)')
-    axes[2, 0].set_ylabel('Torque Agente (Nm)')
-    axes[2, 0].grid(True)
-    
-    # --- COLUMNA DERECHA: CADERA IZQUIERDA ---
-    # Fila 1: Errores de Posición (Ya transformados a grados)
-    axes[0, 1].plot(data_pid['time'], data_pid['error_pos_l'], label='Solo PID', alpha=0.7)
-    axes[0, 1].plot(data_combined['time'], data_combined['error_pos_l'], label='PID + Agente', alpha=0.7)
-    axes[0, 1].set_title('Error de Posición - Cadera Izquierda')
+    axes[0, 1].plot(data_pid['time'], data_pid['error_pos_r'], label='Solo PID', alpha=0.7)
+    axes[0, 1].plot(data_combined['time'], data_combined['error_pos_r'], label='PID + Agente', alpha=0.7)
+    axes[0, 1].set_title('Error de Posición - Cadera Derecha')
     axes[0, 1].set_ylabel('Error (Grados °)')
     axes[0, 1].grid(True)
     axes[0, 1].legend()
     
     # Fila 2: Torque Aplicado al Motor
-    axes[1, 1].plot(data_pid['time'], data_pid['torque_l'], label='Solo PID', alpha=0.7)
-    axes[1, 1].plot(data_combined['time'], data_combined['torque_l'], label='PID + Agente', alpha=0.7)
-    axes[1, 1].set_title('Torque Total al Motor - Cadera Izquierda')
+    axes[1, 1].plot(data_pid['time'], data_pid['torque_r'], label='Solo PID', alpha=0.7)
+    axes[1, 1].plot(data_combined['time'], data_combined['torque_r'], label='PID + Agente', alpha=0.7)
+    axes[1, 1].set_title('Torque Total al Motor - Cadera Derecha')
+    axes[1, 1].set_ylabel('Torque (Nm)')
     axes[1, 1].grid(True)
+    
+    # Fila 3: Diferencia de Torque Neto
+    diff_r = data_combined['torque_r'] - data_pid['torque_r'].reindex_like(data_combined['torque_r']).fillna(0)
+    axes[2, 1].plot(data_combined['time'], diff_r, color='purple', alpha=0.7)
+    axes[2, 1].set_title('Aporte Neto del Agente (Δ Torque Derecho)')
+    axes[0, 1].set_xlabel('Tiempo (s)')
+    axes[2, 1].set_ylabel('Torque Agente (Nm)')
+    axes[2, 1].grid(True)
+    
+    # --- COLUMNA DERECHA: CADERA IZQUIERDA ---
+    # Fila 1: Errores de Posición (Ya transformados a grados)
+    axes[0, 0].plot(data_pid['time'], data_pid['error_pos_l'], label='Solo PID', alpha=0.7)
+    axes[0, 0].plot(data_combined['time'], data_combined['error_pos_l'], label='PID + Agente', alpha=0.7)
+    axes[0, 0].set_title('Error de Posición - Cadera Izquierda')
+    axes[0, 0].set_ylabel('Error (Grados °)')
+    axes[0, 0].grid(True)
+    axes[0, 0].legend()
+    
+    # Fila 2: Torque Aplicado al Motor
+    axes[1, 0].plot(data_pid['time'], data_pid['torque_l'], label='Solo PID', alpha=0.7)
+    axes[1, 0].plot(data_combined['time'], data_combined['torque_l'], label='PID + Agente', alpha=0.7)
+    axes[1, 0].set_title('Torque Total al Motor - Cadera Izquierda')
+    axes[1, 0].grid(True)
     
     # Fila 3: Diferencia de Torque Neto Izquierdo
     diff_l = data_combined['torque_l'] - data_pid['torque_l'].reindex_like(data_combined['torque_l']).fillna(0)
-    axes[2, 1].plot(data_combined['time'], diff_l, color='purple', alpha=0.7)
-    axes[2, 1].set_title('Aporte Neto del Agente (Δ Torque Izquierdo)')
-    axes[2, 1].set_xlabel('Tiempo (s)')
-    axes[2, 1].grid(True)
+    axes[2, 0].plot(data_combined['time'], diff_l, color='purple', alpha=0.7)
+    axes[2, 0].set_title('Aporte Neto del Agente (Δ Torque Izquierdo)')
+    axes[0, 0].set_xlabel('Tiempo (s)')
+    axes[2, 0].grid(True)
     
     plt.tight_layout()
     plt.show()
