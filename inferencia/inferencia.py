@@ -909,10 +909,10 @@ def main() -> int:
             #tau_agent_l = -tau_agent_l
 
         # --- Combinación de Leyes de Control y Saturación Segura ---
-        #tau_combined_r = np.clip(tau_pid_r, -args.safe_torque_limit, args.safe_torque_limit)
-        #tau_combined_l = np.clip(tau_pid_l, -args.safe_torque_limit, args.safe_torque_limit)
-        tau_combined_r = np.clip(tau_pid_r + tau_agent_r, -args.safe_torque_limit, args.safe_torque_limit)
-        tau_combined_l = np.clip(tau_pid_l + tau_agent_l, -args.safe_torque_limit, args.safe_torque_limit)
+        tau_combined_r = np.clip(tau_pid_r, -args.safe_torque_limit, args.safe_torque_limit)
+        tau_combined_l = np.clip(tau_pid_l, -args.safe_torque_limit, args.safe_torque_limit)
+        #tau_combined_r = np.clip(tau_pid_r + tau_agent_r, -args.safe_torque_limit, args.safe_torque_limit)
+        #tau_combined_l = np.clip(tau_pid_l + tau_agent_l, -args.safe_torque_limit, args.safe_torque_limit)
 
         # Enviar comandos de torque directos al hardware
         interface.publish_torque(tau_combined_l, tau_combined_r)
